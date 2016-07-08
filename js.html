@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+
+<script>
+	function isSpecial( c ){
+		if( c>='A'&&c<='Z'  )
+			return true;
+		return false;
+	}
+
+	function linkSplit( text ){
+		var textArr = [];
+		var start = 0;
+		var flag = 0;
+		for( var i = 0; i < text.length; i++ ){
+			if( isSpecial( text[i] ) ){
+				if( flag ){
+					flag = 0;
+					textArr.push( text.substring( start, i ) );
+				}
+				textArr.push( text[i] );
+			}else{
+				if( !flag ){
+					flag = 1;
+					start = i;
+				}
+			}
+		}
+
+		return textArr;
+	}
+
+	var text = "asdasASAsdAdFF";
+	var arr = linkSplit( text );
+	console.log(arr);
+
+</script>
+</body>
+</html>
