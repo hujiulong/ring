@@ -19,30 +19,16 @@
 				overflow: hidden;
 			}
 
-			#info {
-				color:#000;
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 5px;
-
-			}
-
-			a {
-				color: red;
-			}
 		</style>
 	</head>
 
 	<body>
 		<div id="container"></div>
-		<div id="info">
-			<a href="http://threejs.org" target="_blank">three.js</a> - BendModifier example</br>
-			Click the mouse on the plane
-		</div>
-
+		
 		<script src="js/libs/three.js"></script>
 		<script src="js/renderers/Projector.js"></script>
 		<script src="js/libs/GeometryUtils.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/controls/TrackballControls.min.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -58,7 +44,10 @@
 			var camera, controls, scene, renderer;
 			var font;
 
-			var fontMaterial = new THREE.MeshPhongMaterial( { color: 0x62254a } );
+			var materials = [];
+			var goldMaterial = new THREE.MeshPhongMaterial( { color: 0xffce42 } );
+
+			var ringMatetial = new THREE.MeshPhongMaterial( { color: 0xffce42 , specular : 0x333333, combine : THREE.MixOperation, shininess : 40, reflectivity: 0.55 } );
 
 			var mouse = new THREE.Vector2();
 			var projector = new THREE.Projector();
@@ -116,21 +105,68 @@
 
 				var loader = new THREE.FontLoader();
 				loader.load( 'fonts/Script_MT_Bold_Regular.json', function ( response ) {
-
 					font = response;
-					console.log(font);
-
 					textMeshBuild();
 
 				} );
 
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) {
+				};
+
+
+				var loader = new THREE.OBJLoader();
+				loader.load( 'models/ring1-9.obj', function ( object ) {
+					object.traverse( function ( child ) {
+						if ( child instanceof THREE.Mesh ) {
+							console.log(child.getWorldPosition ( ))
+							child.material = ringMatetial;
+							child.rotation.x = -Math.PI/2;
+						}
+					} );
+					object.scale.set(50,50,50);
+					console.log(object.position);
+					var bbox = new THREE.BoundingBoxHelper( object, 0xff0000 );
+					bbox.update();
+					console.log(object.matrixWorld)
+					// object.rotation.x = Math.PI/2;
+					object.position.sub(bbox.position);
+					scene.add( bbox );
+					scene.add( object );
+					console.log(bbox.position)
+				}, onProgress, onError );
 				
-				// edges = new THREE.FaceNormalsHelper( Plane, 20, 0x00ff00, 1 ); scene.add( edges );
+				// 				loader.load( 'models/ring1-9.obj', function ( object ) {
+				// 	object.traverse( function ( child ) {
+				// 		if ( child instanceof THREE.Mesh ) {
+				// 			console.log(child.getWorldPosition ( ))
+				// 			child.material = ringMatetial;
+				// 			child.rotation.x = -Math.PI/2;
+				// 		}
+				// 	} );
+				// 	object.scale.set(50,50,50);
+				// 	console.log(object.position);
+				// 	var bbox = new THREE.BoundingBoxHelper( object, 0xff0000 );
+				// 	bbox.update();
+				// 	console.log(object.matrixWorld)
+				// 	// object.rotation.x = Math.PI/2;
+				// 	object.position.sub(bbox.position);
+				// 	scene.add( bbox );
+				// 	// scene.add( object );
+				// 	console.log(bbox.position)
+				// }, onProgress, onError );
+				
 
 			}
 
 			function isSpecial( c ){
-				if( c>='A'&&c<='Z' || c=='p' || c=='s' )
+				if( c>='A'&&c<='Z' || c=='p' || c=='s' || c=='1')
 					return true;
 				return false;
 			}
@@ -163,7 +199,7 @@
 				var textArr=[];
 
 				// var text = "pqqp";
-				var text = "SAADSAsdasdaAS";
+				var text = "AB";
 				var textMesh;
 				var start = 0;
 				var flag = 0;
@@ -182,15 +218,20 @@
 						}
 					}
 				}
-
+				var direction = new THREE.Vector3( 0, 0, -1 );
+				var axis =  new THREE.Vector3( 0, 1, 0 );
+				var angle = Math.PI / 6;
+				// modifier.set( direction, axis, angle ).modify( textMesh.geometry );
+				textMesh.position.set(-160,-80,430)
 				scene.add(textMesh);
+				console.log(textMesh.position)
 
 			}
 
 			function createFontGeometry( text ) {
 
 				return new THREE.TextGeometry( text,{
-								size: 128,
+								size: 158,
 								height: 50,
 								curveSegments: 4,
 								font: font,
@@ -207,7 +248,7 @@
 				if( textMesh === undefined ){
 					return new THREE.Mesh( 
 						createFontGeometry( text ),
-						fontMaterial
+						ringMatetial
 					);
 				}
 				textMesh.geometry.computeBoundingBox();
@@ -220,14 +261,15 @@
 
 				var oldWidth = oldTextGeometry.boundingBox.max.x -  oldTextGeometry.boundingBox.min.x;
 				var newWidth = newTextGeometry.boundingBox.max.x -  oldTextGeometry.boundingBox.min.x;
-				var newWidth = newTextGeometry.boundingBox.max.y -  oldTextGeometry.boundingBox.min.y;
+				var newHeight = newTextGeometry.boundingBox.max.y -  oldTextGeometry.boundingBox.min.y;
+				console.log(newHeight);
 			
 				var crash = false;
 
 				var position = new THREE.Vector3( oldWidth ,0 ,0 );
 				
 				do{
-					var originPoint = position.clone().add(new THREE.Vector3( newWidth/2 , newWidth/2, 0 ));
+					var originPoint = position.clone().add(new THREE.Vector3( newWidth/2 , newHeight/2, 0 ));
 
 					for (var vertexIndex = 0; vertexIndex < newTextGeometry.vertices.length; vertexIndex++) {
 						if( newTextGeometry.vertices[vertexIndex].z != originPoint.z||newTextGeometry.vertices[vertexIndex].x >= newWidth/2 )
@@ -235,7 +277,7 @@
 
 					    var localVertex = newTextGeometry.vertices[vertexIndex].clone();
 
-					    var directionVector = localVertex.sub( new THREE.Vector3( newWidth/2 ,newWidth/2,0 ) );
+					    var directionVector = localVertex.sub( new THREE.Vector3( newWidth/2 ,newHeight/2,0 ) );
 					    
 					    var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
 
@@ -254,12 +296,10 @@
 
 				return new THREE.Mesh( 
 						oldTextGeometry,
-						fontMaterial
+						ringMatetial
 					);
 
 			}
-
-	
 
 
 			

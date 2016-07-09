@@ -7,37 +7,11 @@
 <body>
 
 <script>
-	function isSpecial( c ){
-		if( c>='A'&&c<='Z'  )
-			return true;
-		return false;
+	function toHex( r,b,g ){
+		console.log((r*255).toString(16)+','+(g*255).toString(16)+','+(b*255).toString(16));
 	}
 
-	function linkSplit( text ){
-		var textArr = [];
-		var start = 0;
-		var flag = 0;
-		for( var i = 0; i < text.length; i++ ){
-			if( isSpecial( text[i] ) ){
-				if( flag ){
-					flag = 0;
-					textArr.push( text.substring( start, i ) );
-				}
-				textArr.push( text[i] );
-			}else{
-				if( !flag ){
-					flag = 1;
-					start = i;
-				}
-			}
-		}
-
-		return textArr;
-	}
-
-	var text = "asdasASAsdAdFF";
-	var arr = linkSplit( text );
-	console.log(arr);
+	toHex(0.24725, 0.1995, 0.0745);
 
 </script>
 </body>
