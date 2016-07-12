@@ -32,6 +32,7 @@
 		<script src="js/controls/TrackballControls.min.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/ThreeCSG.js"></script>
 		<script src="js/libs/BendModifier.js"></script>
 
 
@@ -43,6 +44,7 @@
 
 			var camera, controls, scene, renderer;
 			var font;
+			var ringBody;
 
 			var materials = [];
 			var goldMaterial = new THREE.MeshPhongMaterial( { color: 0xffce42 } );
@@ -120,46 +122,79 @@
 				var onError = function ( xhr ) {
 				};
 
+				var loader = new THREE.JSONLoader();
 
-				var loader = new THREE.OBJLoader();
-				loader.load( 'models/ring1-9.obj', function ( object ) {
-					object.traverse( function ( child ) {
-						if ( child instanceof THREE.Mesh ) {
-							console.log(child.getWorldPosition ( ))
-							child.material = ringMatetial;
-							child.rotation.x = -Math.PI/2;
-						}
-					} );
-					object.scale.set(50,50,50);
-					console.log(object.position);
-					var bbox = new THREE.BoundingBoxHelper( object, 0xff0000 );
-					bbox.update();
-					console.log(object.matrixWorld)
-					// object.rotation.x = Math.PI/2;
-					object.position.sub(bbox.position);
-					scene.add( bbox );
-					scene.add( object );
-					console.log(bbox.position)
-				}, onProgress, onError );
+				// load a resource
+				loader.load(
+					// resource URL
+					'models/o.js',
+					// Function when resource is loaded
+					function ( geometry, materials ) {
+						var material = new THREE.MultiMaterial( materials );
+						var object = new THREE.Mesh( geometry, material );
+						object.scale.set(50,50,50);
+						object.rotation.x = -Math.PI/2;
+						console.log(object);
+						scene.add( object );
+						var geometry = new THREE.BoxGeometry( 1000,100,300 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+				var box = new THREE.Mesh( geometry, material );
+				scene.add(box);
+
+				var bsp1 = new ThreeBSP( object );
+				var bsp2 = new ThreeBSP( box );
+				var geometry = bsp1.subtract( bsp2 ).toGeometry();
+				var mesh = new THREE.Mesh( geometry, ringMatetial );
+				mesh.position.set(0,-300,0);
+				scene.add( mesh );
+				console.log(mesh);
+					}
+				);
+
 				
-				// 				loader.load( 'models/ring1-9.obj', function ( object ) {
+				// var loader = new THREE.OBJLoader();
+				// loader.load( 'models/9-1obj.obj', function ( object ) {
+				// 	var themesh;
 				// 	object.traverse( function ( child ) {
 				// 		if ( child instanceof THREE.Mesh ) {
-				// 			console.log(child.getWorldPosition ( ))
 				// 			child.material = ringMatetial;
 				// 			child.rotation.x = -Math.PI/2;
+				// 			themesh = child.clone();
+				// 			themesh.scale.set(50,50,50);
+				// 			console.log(themesh.toJSON());
 				// 		}
 				// 	} );
+				// 	console.log(object);
 				// 	object.scale.set(50,50,50);
-				// 	console.log(object.position);
+				// 	var boundingBox = new THREE.Box3().setFromObject( object );
+				// 	console.log(boundingBox.max.x-boundingBox.min.x);
 				// 	var bbox = new THREE.BoundingBoxHelper( object, 0xff0000 );
 				// 	bbox.update();
-				// 	console.log(object.matrixWorld)
-				// 	// object.rotation.x = Math.PI/2;
-				// 	object.position.sub(bbox.position);
-				// 	scene.add( bbox );
-				// 	// scene.add( object );
 				// 	console.log(bbox.position)
+				// 	scene.add( bbox );
+				// 	console.log(bbox);
+				// 	scene.add(object);
+
+				// var geometry = new THREE.CylinderBufferGeometry( 926/2, 926/2, 200, 32,32,false,-Math.PI/6,Math.PI/3 );
+				// var material = new THREE.MeshBasicMaterial( {color: 0xffff00 ,side : THREE.DoubleSide} );
+				// var cylinder = new THREE.Mesh( geometry, material );
+				// cylinder.position.set(5.8,-104,41);
+				// var bbox = new THREE.BoundingBoxHelper( cylinder, 0x0000ff );
+				// 	bbox.update();
+				// 	scene.add(bbox);
+				// 	console.log(bbox.position)
+				// scene.add( cylinder );
+				// var geometry = new THREE.BoxBufferGeometry( 1000,100,300 );
+				// var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+				// var box = new THREE.Mesh( geometry, material );
+				// // scene.add(box);
+
+				// // var bsp1 = new ThreeBSP( themesh );
+				// // var bsp2 = new ThreeBSP( cylinder );
+				// // var geometry = bsp1.subtract( bsp2 ).toBufferGeometry();
+				// // var mesh = new THREE.Mesh( geometry, ringMatetial );
+				// // scene.add( mesh );
+
 				// }, onProgress, onError );
 				
 
@@ -199,7 +234,7 @@
 				var textArr=[];
 
 				// var text = "pqqp";
-				var text = "AB";
+				var text = "ABCDED";
 				var textMesh;
 				var start = 0;
 				var flag = 0;
@@ -222,10 +257,20 @@
 				var axis =  new THREE.Vector3( 0, 1, 0 );
 				var angle = Math.PI / 6;
 				// modifier.set( direction, axis, angle ).modify( textMesh.geometry );
-				textMesh.position.set(-160,-80,430)
-				scene.add(textMesh);
-				console.log(textMesh.position)
+				textMesh.geometry.computeBoundingBox();
+	
+				textMesh.width = textMesh.geometry.boundingBox.max.x -  textMesh.geometry.boundingBox.min.x;
+				textMesh.height = textMesh.geometry.boundingBox.max.y - textMesh.geometry.boundingBox.min.y;
 
+				// console.log(width);
+				console.log(textMesh.width)
+				textMesh.position.set(-textMesh.width/2+80,-textMesh.height/2,430 +40)
+				scene.add(textMesh);
+				var arrowHelper = new THREE.ArrowHelper( new THREE.Vector3(0,0,-1), textMesh.position, 200, 0xff0000 );
+				scene.add( arrowHelper );
+		
+				var theta = (textMesh.width/(926*Math.PI))*Math.PI*2;
+				modifier.set( direction, axis, theta/2 ).modify( textMesh.geometry );
 			}
 
 			function createFontGeometry( text ) {
