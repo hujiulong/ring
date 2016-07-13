@@ -309,16 +309,18 @@ var Ring = new function() {
 		// 		var spline =  new THREE.CatmullRomCurve3( randomPoints );
 
 		var points = [];
-		for ( var i = 0; i <= 1; i +=0.01 ) {
+		for ( var i = 0; i <= 1.1; i +=0.01 ) {
 			// points.push( new THREE.Vector3( curve.getPointAt( i ).x,0,curve.getPointAt( i ).y ) );
 			// points.push( new THREE.Vector3( curve.getPointAt( i ).x, Math.sin( i*2*Math.PI )*100 ,curve.getPointAt( i ).y ) );
 			// console.log(Math.sin(i*2*Math.PI)*100)
-			points.push( new THREE.Vector3( curve.getPointAt( i ).x,Math.sin( i*2*Math.PI*6 )*30,curve.getPointAt( i ).y ) );
+			// points.push( new THREE.Vector3( curve.getPointAt( i ).x,Math.sin( i*2*Math.PI*6 )*30,curve.getPointAt( i ).y ) );
+			
+			points.push( new THREE.Vector3( curve.getPointAt( i%1 ).x,i*300,curve.getPointAt( i%1 ).y ) );
 
 		}
 		console.log(points);
 		var spline =  new THREE.CatmullRomCurve3( points );
-		spline.closed = true;
+		// spline.closed = true;
 		//
 		var extrudeSettings = {
 			extrudePath		: spline,

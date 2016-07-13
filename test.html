@@ -132,22 +132,30 @@
 					function ( geometry, materials ) {
 						var material = new THREE.MultiMaterial( materials );
 						var object = new THREE.Mesh( geometry, material );
+						for(var i=0;i<geometry.vertices.length;i++){
+							if(geometry.vertices[i].x*50>150&&geometry.vertices[i].y*50<=-100){
+								geometry.vertices[i].x = 4;
+								geometry.vertices[i].y = -2;
+								// geometry.vertices.splice(i,1);
+								// console.log(geometry.vertices);
+							}
+						}
+						object.geometry.verticesNeedUpdate = true;
+						object.geometry.elementsNeedUpdate = true;
 						object.scale.set(50,50,50);
 						object.rotation.x = -Math.PI/2;
 						console.log(object);
 						scene.add( object );
-						var geometry = new THREE.BoxGeometry( 1000,100,300 );
-				var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
-				var box = new THREE.Mesh( geometry, material );
-				scene.add(box);
+						console.log(geometry)
 
-				var bsp1 = new ThreeBSP( object );
-				var bsp2 = new ThreeBSP( box );
-				var geometry = bsp1.subtract( bsp2 ).toGeometry();
-				var mesh = new THREE.Mesh( geometry, ringMatetial );
-				mesh.position.set(0,-300,0);
-				scene.add( mesh );
-				console.log(mesh);
+
+				// var bsp1 = new ThreeBSP( object );
+				// var bsp2 = new ThreeBSP( box );
+				// var geometry = bsp1.subtract( bsp2 ).toGeometry();
+				// var mesh = new THREE.Mesh( geometry, ringMatetial );
+				// mesh.position.set(0,-300,0);
+				// scene.add( mesh );
+				// console.log(mesh);
 					}
 				);
 
