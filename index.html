@@ -1,450 +1,545 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - geometry - text</title>
+		<title>three.js webgl - BendModifier</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
-				font-family: Monospace;
-				background-color: #000;
-				color: #fff;
+				color: #000;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				font-weight: bold;
+
+				background-color: #fff;
 				margin: 0px;
 				overflow: hidden;
 			}
-			#info {
-				position: absolute;
-				top: 10px;
-				width: 100%;
-				text-align: center;
-				z-index: 100;
-				display:block;
-			}
-			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+
 		</style>
 	</head>
+
 	<body>
-
-		<div id="info">
-		<a href="http://threejs.org" target="_blank">three.js</a> - procedural 3D text by <a href="http://www.lab4games.net/zz85/blog" target="_blank">zz85</a> &amp; alteredq
-		<br/>type to enter new text, drag to spin the text
-		<br/><span class="button" id="color">change color</span>,
-			<span class="button" id="font">change font</span>,
-			<span class="button" id="weight">change weight</span>,
-			<span class="button" id="bevel">change bevel</span>
-			<a id="permalink" href="#">permalink</a>
-		</div>
-
-
-		<script src="js/libs/three.min.js"></script>
+		<div id="container"></div>
+		
+		<script src="js/libs/three.js"></script>
+		<script src="js/renderers/Projector.js"></script>
 		<script src="js/libs/GeometryUtils.js"></script>
-
+		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/controls/TrackballControls.min.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
-		<script src="js/controls/TrackballControls.min.js"></script>
+		<script src="js/libs/ThreeCSG.js"></script>
+		<script src="js/libs/BendModifier.js"></script>
+
 
 		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-			THREE.Cache.enabled = true;
-			var ringBody, ringText;
+			var container, stats;
 
-			var container, stats, permalink, hex, color;
+			var camera, controls, scene, renderer;
+			var font;
+			var ringBody;
 
-			var camera, cameraTarget, scene, renderer;
+			var materials = [];
+			var goldMaterial = new THREE.MeshPhongMaterial( { color: 0xffce42 } );
 
-			var group, textMesh1, textMesh2, textGeo, material;
+			var ringMatetial = new THREE.MeshPhongMaterial( { color: 0xffce42 , specular : 0x333333, combine : THREE.MixOperation, shininess : 40, reflectivity: 0.55 ,side:THREE.DoubleSide} );
 
-			var firstLetter = true;
+			var mouse = new THREE.Vector2();
+			var projector = new THREE.Projector();
+			var modifier = new THREE.BendModifier();
 
-			var text = "three.js",
+			var direction = new THREE.Vector3( 0, 0, -1 );
+				var axis =  new THREE.Vector3( 0, 1, 0 );
+				var angle = Math.PI / 6;
 
-				height = 20,
-				size = 70,
-				hover = 30,
 
-				curveSegments = 4,
-
-				bevelThickness = 2,
-				bevelSize = 1.5,
-				bevelSegments = 3,
-				bevelEnabled = true,
-
-				font = undefined,
-
-				fontName = "optimer", // helvetiker, optimer, gentilis, droid sans, droid serif
-				fontWeight = "bold"; // normal bold
-
-			var fontMap = {
-
-				"helvetiker": 0,
-				"optimer": 1,
-				"gentilis": 2,
-				"droid/droid_sans": 3,
-				"droid/droid_serif": 4
-
-			};
-
-			var weightMap = {
-
-				"regular": 0,
-				"bold": 1
-
-			};
-
-			var reverseFontMap = [];
-			var reverseWeightMap = [];
-
-			for ( var i in fontMap ) reverseFontMap[ fontMap[i] ] = i;
-			for ( var i in weightMap ) reverseWeightMap[ weightMap[i] ] = i;
-
-			var targetRotation = 0;
-			var targetRotationOnMouseDown = 0;
-
-			var mouseX = 0;
-			var mouseXOnMouseDown = 0;
-
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
-
-			var fontIndex = 1;
+			var Plane;
 
 			init();
 			animate();
 
-			function decimalToHex( d ) {
-
-				var hex = Number( d ).toString( 16 );
-				hex = "000000".substr( 0, 6 - hex.length ) + hex;
-				return hex.toUpperCase();
-
-			}
-
 			function init() {
 
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
+				// camera
 
-				permalink = document.getElementById( "permalink" );
-
-				// CAMERA
-
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 15000 );
-				camera.position.set( 0, 400, 700 );
-
-				cameraTarget = new THREE.Vector3( 0, 150, 0 );
-
-				controls = new THREE.TrackballControls( camera , container );
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.3;
-		
-
-				// SCENE
+				AddCamera(0, 0, 2000);
 
 				scene = new THREE.Scene();
-				scene.fog = new THREE.Fog( 0x000000, 250, 1400 );
 
-				// LIGHTS
+				// lights
 
-				// var dirLight = new THREE.DirectionalLight( 0xffffff, 0.125 );
-				// dirLight.position.set( 0, 0, 1 ).normalize();
-				// scene.add( dirLight );
+				light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 0, 100, 200 );
+				scene.add( light );
 
-				// var pointLight = new THREE.PointLight( 0xffffff, 1.5 );
-				// pointLight.position.set( 0, 100, 90 );
-				// scene.add( pointLight );
+				light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 0, -100, -200 );
+				scene.add( light );
 
-				var ambientLight = new THREE.AmbientLight( 0x606060 );
-				scene.add( ambientLight );
-
-				var directionalLight = new THREE.DirectionalLight( 0xffffff );
-				directionalLight.position.set( -0.2, 0.5, 0.75 ).normalize();
-				scene.add( directionalLight );
-				// Get text from hash
-
-				var hash = document.location.hash.substr( 1 );
-
-				if ( hash.length !== 0 ) {
-
-					var colorhash  = hash.substring( 0, 6 );
-					var fonthash   = hash.substring( 6, 7 );
-					var weighthash = hash.substring( 7, 8 );
-					var bevelhash  = hash.substring( 8, 9 );
-					var texthash   = hash.substring( 10 );
-
-					hex = colorhash;
-					// pointLight.color.setHex( parseInt( colorhash, 16 ) );
-
-					fontName = reverseFontMap[ parseInt( fonthash ) ];
-					fontWeight = reverseWeightMap[ parseInt( weighthash ) ];
-
-					bevelEnabled = parseInt( bevelhash );
-
-					text = decodeURI( texthash );
-
-					updatePermalink();
-
-				} else {
-
-					// pointLight.color.setHSL( Math.random(), 1, 0.5 );
-					// hex = decimalToHex( pointLight.color.getHex() );
-
-				}
-
-				material = new THREE.MultiMaterial( [
-					new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.FlatShading } ), // front
-					new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.SmoothShading } ) // side
-				] );
-
-				group = new THREE.Group();
-				group.position.y = 100;
-
-				scene.add( group );
-
-				loadFont();
-
-				var ringBody = new THREE.Mesh( 
-					new THREE.CylinderGeometry( 50, 50, 20, 320 ), 
-					new THREE.MeshPhongMaterial( { color: 0xd3a809,  shininess: 500, shading: THREE.SmoothShading, emissive : 0x000000,specular : 0xffffff } )
-				);
-				ringBody.position.y = 200;
-				scene.add( ringBody );
-				console.log(ringBody);
-
-				var plane = new THREE.Mesh(
-					new THREE.PlaneBufferGeometry( 10000, 10000 ),
-					new THREE.MeshBasicMaterial( { color: 0xffffff, opacity: 0.5, transparent: true } )
-				);
-				plane.position.y = 100;
-				plane.rotation.x = - Math.PI / 2;
-				scene.add( plane );
-
-				// RENDERER
+				// renderer
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setClearColor( scene.fog.color );
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0xffffff );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container = document.getElementById( 'container' );
 				container.appendChild( renderer.domElement );
 
-				// STATS
-
 				stats = new Stats();
-				container.appendChild( stats.dom );
-
-				// EVENTS
-
-				document.getElementById( "color" ).addEventListener( 'click', function() {
-
-					pointLight.color.setHSL( Math.random(), 1, 0.5 );
-					hex = decimalToHex( pointLight.color.getHex() );
-
-					updatePermalink();
-
-				}, false );
-
-				document.getElementById( "font" ).addEventListener( 'click', function() {
-
-					fontIndex ++;
-
-					fontName = reverseFontMap[ fontIndex % reverseFontMap.length ];
-
-					loadFont();
-
-				}, false );
-
-
-				document.getElementById( "weight" ).addEventListener( 'click', function() {
-
-					if ( fontWeight === "bold" ) {
-
-						fontWeight = "regular";
-
-					} else {
-
-						fontWeight = "bold";
-
-					}
-
-					loadFont();
-
-				}, false );
-
-				document.getElementById( "bevel" ).addEventListener( 'click', function() {
-
-					bevelEnabled = !bevelEnabled;
-
-					refreshText();
-
-				}, false );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				container.appendChild( stats.domElement );
 
 				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
+				// document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
+				// world
+
+				var loader = new THREE.FontLoader();
+				loader.load( 'fonts/Script_MT_Bold_Regular.json', function ( response ) {
+					font = response;
+					textMeshBuild();
+
+				} );
+
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) {
+				};
+
+				var loader = new THREE.JSONLoader();
+
+				// load a resource
+				loader.load(
+					// resource URL
+					'models/o.js',
+					// Function when resource is loaded
+					function ( geometry, materials ) {
+
+						var matrix = (new THREE.Matrix4().makeRotationX ( - Math.PI/2 )).multiply(new THREE.Matrix4().makeScale ( 50, 50, 50 ));
+
+						var plane1 = new THREE.Plane();
+						plane1.setFromNormalAndCoplanarPoint(new THREE.Vector3(.5,0,-1).normalize(),new THREE.Vector3( 0, 0, 0 ));
+
+						var arrowHelper = new THREE.ArrowHelper( plane1.normal, new THREE.Vector3( 0, 0, 0 ), 200, 0xff0000 );
+						scene.add( arrowHelper );
+
+						var plane2 = new THREE.Plane();
+						plane2.setFromNormalAndCoplanarPoint(new THREE.Vector3(-.5,0,-1).normalize(),new THREE.Vector3( 0, 0, 0 ));
+
+						var arrowHelper = new THREE.ArrowHelper( plane2.normal, new THREE.Vector3( 0, 0, 0 ), 200, 0xff0000 );
+						scene.add( arrowHelper );
+						var newVertices = [];
+						var newVerticesMap = [];
+						var newVerticesIndex = 0;
+						var newFaces = [];
+
+						var material = new THREE.MultiMaterial( materials );
+						var object = new THREE.Mesh( geometry, material );
+						// scene.add(object);
+						console.log(geometry.clone());
+						geometry.applyMatrix(matrix);
+						geometry.verticesNeedUpdate = true;
+						console.log(geometry);
+
+						function inRange( p1, p2, point ){
+							if( p1.distanceToPoint( point ) > 0 && p2.distanceToPoint( point ) > 0 )
+								return true;
+							return false;
+						}
+
+						var verticesMap = {
+							a : 0,
+							b : 1,
+							c : 2
+						};
+
+						for(var i=0;i<geometry.faces.length;i++){
+
+							var face = geometry.faces[i];
+							// console.log(face);
+							var a = geometry.vertices[ face.a ];
+							var b = geometry.vertices[ face.b ];
+							var c = geometry.vertices[ face.c ];
+
+							var points = [ a, b, c ];
+							var outPointsFlag = [ 0, 0, 0 ];
+							var inPoints = [];
+							var outPoints = [];
+
+							if( inRange( plane1, plane2, a ) ){
+								outPointsFlag[0] = 1;
+							}
+
+							if( inRange( plane1, plane2, b ) ){
+								outPointsFlag[1] = 1;
+							}
+
+							if( inRange( plane1, plane2, c ) ){
+								outPointsFlag[2] = 1;
+							}
+
+							for(var k=0;k<outPointsFlag.length;k++){
+								if( outPointsFlag[k] ){
+									outPoints.push( points[k] );
+								}else{
+									inPoints.push( points[k] );
+								}
+							}
+
+
+
+							if( outPoints.length == 0 ){
+								newVertices.push( a, b, c );
+								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
+							}else if( outPoints.length == 1 ){
+
+								var line1 = new THREE.Line3( outPoints[0], inPoints[0] );
+								var line2 = new THREE.Line3( outPoints[0], inPoints[1] );
+								var point1 = plane1.intersectLine( line1 )||plane2.intersectLine( line1 );
+								var point2 = plane1.intersectLine( line2 )||plane2.intersectLine( line2 );
+
+								newVertices.push( inPoints[0], inPoints[1], point1, point2 );
+								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-3, newVertices.length-4 ) );
+								newFaces.push( new THREE.Face3( newVertices.length-2, newVertices.length-3, newVertices.length-4 ) );
+								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+
+							}else if( outPoints.length == 2 ){
+
+								var line1 = new THREE.Line3( inPoints[0], outPoints[0] );
+								var line2 = new THREE.Line3( inPoints[0], outPoints[1] );
+								var point1 = plane1.intersectLine( line1 )||plane2.intersectLine( line1 );
+								var point2 = plane1.intersectLine( line2 )||plane2.intersectLine( line2 );
+
+								newVertices.push( inPoints[0], point1, point2 );
+								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
+
+							}
+
+							// if( geometry.vertices[ geometry.faces[i].a ] )
+							// if( newVerticesMap[ geometry.faces[i].a ] && newVerticesMap[ geometry.faces[i].b ] && newVerticesMap[ geometry.faces[i].c ]){
+							// 	newFaces.push( new THREE.Face3( 
+							// 		newVerticesMap[ geometry.faces[i].a ],
+							// 		newVerticesMap[ geometry.faces[i].b ],
+							// 		newVerticesMap[ geometry.faces[i].c ],
+							// 		geometry.faces[i].normal
+							// 	 ) );
+							// }
+						}
+
+						// for(var i=0;i<1;i++){
+						// 	console.log(geometry.vertices[i]);
+						// 	geometry.vertices[i].applyMatrix4(matrix);
+						// 	console.log(geometry.vertices[i])
+						// // 	// if(geometry.vertices[i].x*50>150&&geometry.vertices[i].y*50<=-100){
+						// // 	// 	geometry.vertices[i].x = 4;
+						// // 	// 	geometry.vertices[i].y = -2;
+						// // 	// 	// geometry.vertices.splice(i,1);
+						// // 	// 	// console.log(geometry.vertices);
+						// 	}
+						// 	geometry.verticesNeedUpdate = true;
+						// 	console.log(geometry);
+							
+						// 	if( !(plane1.distanceToPoint( geometry.vertices[i] )>0 && plane2.distanceToPoint( geometry.vertices[i] )>0) ){
+						// 		newVertices.push( geometry.vertices[i] );
+						// 		newVerticesMap[i] = newVerticesIndex++;
+						// 	}
+							
+						// 	// if( plane1.distanceToPoint( geometry.vertices[i] )>0 && plane2.distanceToPoint( geometry.vertices[i] )>0 ){
+						// 	// 	geometry.vertices[i].set(  plane1.projectPoint ( geometry.vertices[i] ) );
+						// 	// }
+						// }
+
+						// for(var i=0;i<geometry.faces.length;i++){
+						// 	var points = [];
+						// 	if( geometry.vertices[ geometry.faces[i].a ] )
+						// 	if( newVerticesMap[ geometry.faces[i].a ] && newVerticesMap[ geometry.faces[i].b ] && newVerticesMap[ geometry.faces[i].c ]){
+						// 		newFaces.push( new THREE.Face3( 
+						// 			newVerticesMap[ geometry.faces[i].a ],
+						// 			newVerticesMap[ geometry.faces[i].b ],
+						// 			newVerticesMap[ geometry.faces[i].c ],
+						// 			geometry.faces[i].normal
+						// 		 ) );
+						// 	}
+						// }
+
+						var newGeometry = new THREE.Geometry();
+						newGeometry.vertices = newVertices;
+						newGeometry.faces = newFaces;
+						newGeometry.computeFaceNormals();
+						var newMesh = new THREE.Mesh( newGeometry,ringMatetial );
+						scene.add(newMesh);
+						console.log(newMesh);
+						
+						// object.geometry.verticesNeedUpdate = true;
+						// object.geometry.elementsNeedUpdate = true;
+						// object.scale.set(50,50,50);
+						// // object.rotation.x = -Math.PI/2;
+						// console.log(object);
+						// scene.add( object );
+						// edges = new THREE.FaceNormalsHelper( object, 2, 0x00ff00, 1 );
+
+						// scene.add( edges );
+						// console.log(geometry)
+
+					
+
+
+				// var bsp1 = new ThreeBSP( object );
+				// var bsp2 = new ThreeBSP( box );
+				// var geometry = bsp1.subtract( bsp2 ).toGeometry();
+				// var mesh = new THREE.Mesh( geometry, ringMatetial );
+				// mesh.position.set(0,-300,0);
+				// scene.add( mesh );
+				// console.log(mesh);
+					}
+				);
+
+				
+				// var loader = new THREE.OBJLoader();
+				// loader.load( 'models/9-1obj.obj', function ( object ) {
+				// 	var themesh;
+				// 	object.traverse( function ( child ) {
+				// 		if ( child instanceof THREE.Mesh ) {
+				// 			child.material = ringMatetial;
+				// 			child.rotation.x = -Math.PI/2;
+				// 			themesh = child.clone();
+				// 			themesh.scale.set(50,50,50);
+				// 			console.log(themesh.toJSON());
+				// 		}
+				// 	} );
+				// 	console.log(object);
+				// 	object.scale.set(50,50,50);
+				// 	var boundingBox = new THREE.Box3().setFromObject( object );
+				// 	console.log(boundingBox.max.x-boundingBox.min.x);
+				// 	var bbox = new THREE.BoundingBoxHelper( object, 0xff0000 );
+				// 	bbox.update();
+				// 	console.log(bbox.position)
+				// 	scene.add( bbox );
+				// 	console.log(bbox);
+				// 	scene.add(object);
+
+				// var geometry = new THREE.CylinderBufferGeometry( 926/2, 926/2, 200, 32,32,false,-Math.PI/6,Math.PI/3 );
+				// var material = new THREE.MeshBasicMaterial( {color: 0xffff00 ,side : THREE.DoubleSide} );
+				// var cylinder = new THREE.Mesh( geometry, material );
+				// cylinder.position.set(5.8,-104,41);
+				// var bbox = new THREE.BoundingBoxHelper( cylinder, 0x0000ff );
+				// 	bbox.update();
+				// 	scene.add(bbox);
+				// 	console.log(bbox.position)
+				// scene.add( cylinder );
+				// var geometry = new THREE.BoxBufferGeometry( 1000,100,300 );
+				// var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+				// var box = new THREE.Mesh( geometry, material );
+				// // scene.add(box);
+
+				// // var bsp1 = new ThreeBSP( themesh );
+				// // var bsp2 = new ThreeBSP( cylinder );
+				// // var geometry = bsp1.subtract( bsp2 ).toBufferGeometry();
+				// // var mesh = new THREE.Mesh( geometry, ringMatetial );
+				// // scene.add( mesh );
+
+				// }, onProgress, onError );
+				
 
 			}
 
-			function onWindowResize() {
+			function isSpecial( c ){
+				if( c>='A' && c<='Z' || c=='p' || c=='s' || c=='1')
+					return true;
+				return false;
+			}
 
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
+			function linkSplit( text ){
+				var textArr = [];
+				var start = 0;
+				var flag = 0;
+				for( var i = 0; i < text.length - 1; i++ ){
+					if( isSpecial( text[i] ) ){
+						if( flag ){
+							flag = 0;
+							textArr.push( text.subString( start, i ) );
+						}
+						textArr.push( text[i] );
+					}else{
+						if( !flag ){
+							flag = 1;
+							start = i;
+						}
+					}
+				}
+
+				return textArr;
+			}
+
+
+			function textMeshBuild(  ){
+
+				var textArr=[];
+
+				// var text = "pqqp";
+				var text = "ABCDED";
+				var textMesh;
+				var start = 0;
+				var flag = 0;
+
+				for( var i = 0; i < text.length ; i++ ){
+					if( isSpecial( text[i] )|| i == text.length-1 ){
+						if( flag ){
+							flag = 0;
+							textMesh = textMeshPush( textMesh, text.substring( start, i ) );
+						}
+						textMesh = textMeshPush( textMesh, text[i] );
+					}else{
+						if( !flag ){
+							flag = 1;
+							start = i;
+						}
+					}
+				}
+				var direction = new THREE.Vector3( 0, 0, -1 );
+				var axis =  new THREE.Vector3( 0, 1, 0 );
+				var angle = Math.PI / 6;
+				// modifier.set( direction, axis, angle ).modify( textMesh.geometry );
+				textMesh.geometry.computeBoundingBox();
+	
+				textMesh.width = textMesh.geometry.boundingBox.max.x -  textMesh.geometry.boundingBox.min.x;
+				textMesh.height = textMesh.geometry.boundingBox.max.y - textMesh.geometry.boundingBox.min.y;
+
+				// console.log(width);
+				console.log(textMesh.width)
+				textMesh.position.set(-textMesh.width/2+80,-textMesh.height/2,430 +40)
+				scene.add(textMesh);
+				var arrowHelper = new THREE.ArrowHelper( new THREE.Vector3(0,0,-1), textMesh.position, 200, 0xff0000 );
+				scene.add( arrowHelper );
+		
+				var theta = (textMesh.width/(926*Math.PI))*Math.PI*2;
+				modifier.set( direction, axis, theta/2 ).modify( textMesh.geometry );
+			}
+
+			function createFontGeometry( text ) {
+
+				return new THREE.TextGeometry( text,{
+								size: 158,
+								height: 50,
+								curveSegments: 4,
+								font: font,
+								weight: "bold",
+								style: "normal",
+								bevelEnabled: true,
+								bevelThickness: 2,
+								bevelSize: 1,
+							});
+			}
+
+			function textMeshPush( textMesh, text ){
+
+				if( textMesh === undefined ){
+					return new THREE.Mesh( 
+						createFontGeometry( text ),
+						ringMatetial
+					);
+				}
+				textMesh.geometry.computeBoundingBox();
+
+				var oldTextGeometry = textMesh.geometry.clone();
+				var newTextGeometry = createFontGeometry( text );
+
+				oldTextGeometry.computeBoundingBox();
+				newTextGeometry.computeBoundingBox();
+
+				var oldWidth = oldTextGeometry.boundingBox.max.x -  oldTextGeometry.boundingBox.min.x;
+				var newWidth = newTextGeometry.boundingBox.max.x -  oldTextGeometry.boundingBox.min.x;
+				var newHeight = newTextGeometry.boundingBox.max.y -  oldTextGeometry.boundingBox.min.y;
+				console.log(newHeight);
+			
+				var crash = false;
+
+				var position = new THREE.Vector3( oldWidth ,0 ,0 );
+				
+				do{
+					var originPoint = position.clone().add(new THREE.Vector3( newWidth/2 , newHeight/2, 0 ));
+
+					for (var vertexIndex = 0; vertexIndex < newTextGeometry.vertices.length; vertexIndex++) {
+						if( newTextGeometry.vertices[vertexIndex].z != originPoint.z||newTextGeometry.vertices[vertexIndex].x >= newWidth/2 )
+							continue;
+
+					    var localVertex = newTextGeometry.vertices[vertexIndex].clone();
+
+					    var directionVector = localVertex.sub( new THREE.Vector3( newWidth/2 ,newHeight/2,0 ) );
+					    
+					    var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+
+					    var collisionResults = ray.intersectObject( textMesh );
+	
+					    if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+					        crash = true;  
+					        oldTextGeometry.merge(newTextGeometry, new THREE.Matrix4().setPosition( position ));
+					        break;
+					    }
+					}
+
+					position.x -= 3;
+		
+				}while( !crash );
+
+				return new THREE.Mesh( 
+						oldTextGeometry,
+						ringMatetial
+					);
+
+			}
+
+
+			
+			function onWindowResize() {
 
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 			}
 
-			//
-
-			function boolToNum( b ) {
-
-				return b ? 1 : 0;
-
-			}
-
-			function updatePermalink() {
-
-				var link = hex + fontMap[ fontName ] + weightMap[ fontWeight ] + boolToNum( bevelEnabled ) + "#" + encodeURI( text );
-
-				permalink.href = "#" + link;
-				window.location.hash = link;
-
-			}
-
-
-			function loadFont() {
-
-				var loader = new THREE.FontLoader();
-				loader.load( 'fonts/' + fontName + '_' + fontWeight + '.typeface.json', function ( response ) {
-
-					font = response;
-
-					refreshText();
-
-				} );
-
-			}
-
-			function createText() {
-
-				textGeo = new THREE.TextGeometry( text, {
-
-					font: font,
-
-					size: size,
-					height: height,
-					curveSegments: curveSegments,
-
-					bevelThickness: bevelThickness,
-					bevelSize: bevelSize,
-					bevelEnabled: bevelEnabled,
-
-					material: 0,
-					extrudeMaterial: 1
-
-				});
-
-				textGeo.computeBoundingBox();
-				textGeo.computeVertexNormals();
-
-
-				// "fix" side normals by removing z-component of normals for side faces
-				// (this doesn't work well for beveled geometry as then we lose nice curvature around z-axis)
-
-				if ( ! bevelEnabled ) {
-
-					var triangleAreaHeuristics = 0.1 * ( height * size );
-
-					for ( var i = 0; i < textGeo.faces.length; i ++ ) {
-
-						var face = textGeo.faces[ i ];
-
-						if ( face.materialIndex == 1 ) {
-
-							for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
-
-								face.vertexNormals[ j ].z = 0;
-								face.vertexNormals[ j ].normalize();
-
-							}
-
-							var va = textGeo.vertices[ face.a ];
-							var vb = textGeo.vertices[ face.b ];
-							var vc = textGeo.vertices[ face.c ];
-
-							var s = THREE.GeometryUtils.triangleArea( va, vb, vc );
-
-							if ( s > triangleAreaHeuristics ) {
-
-								for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
-
-									face.vertexNormals[ j ].copy( face.normal );
-
-								}
-
-							}
-
-						}
-
-					}
-
-				}
-
-				var centerOffset = -0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
-
-				textMesh1 = new THREE.Mesh( textGeo, material );
-
-				textMesh1.position.x = centerOffset;
-				textMesh1.position.y = hover;
-				textMesh1.position.z = 0;
-
-				textMesh1.rotation.x = 0;
-				textMesh1.rotation.y = Math.PI * 2;
-				console.log( textMesh1 );
-
-				group.add( textMesh1 );
-
-			}
-
-			function refreshText() {
-
-				updatePermalink();
-
-				group.remove( textMesh1 );
-
-				if ( !text ) return;
-
-				createText();
-
-			}
-
-
-			//
-
 			function animate() {
 
-				requestAnimationFrame( animate );
-
-				render();
-				stats.update();
-				controls.update();
+					requestAnimationFrame(animate);
+					render();
 
 			}
 
 			function render() {
 
-				group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
+					stats.update();
+					controls.update();
+					renderer.render(scene, camera);
 
-				camera.lookAt( cameraTarget );
+			}
 
-				renderer.clear();
-				renderer.render( scene, camera );
+			function AddCamera( X, Y, Z ) {
+
+					camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+					camera.position.set( X, Y, Z );
+
+					controls = new THREE.TrackballControls( camera, container );
+					controls.rotateSpeed = 2;
+					controls.noZoom = false;
+					controls.zoomSpeed = 1.2;
+					controls.staticMoving = true;
 
 			}
 
