@@ -112,190 +112,6 @@
 
 				} );
 
-				var onProgress = function ( xhr ) {
-					if ( xhr.lengthComputable ) {
-						var percentComplete = xhr.loaded / xhr.total * 100;
-						console.log( Math.round(percentComplete, 2) + '% downloaded' );
-					}
-				};
-
-				var onError = function ( xhr ) {
-				};
-
-				var loader = new THREE.JSONLoader();
-
-				// load a resource
-				loader.load(
-					// resource URL
-					'models/o.js',
-					// Function when resource is loaded
-					function ( geometry, materials ) {
-
-						var matrix = (new THREE.Matrix4().makeRotationX ( - Math.PI/2 )).multiply(new THREE.Matrix4().makeScale ( 50, 50, 50 ));
-
-						var plane1 = new THREE.Plane();
-						plane1.setFromNormalAndCoplanarPoint(new THREE.Vector3(.5,0,-1).normalize(),new THREE.Vector3( 0, 0, 0 ));
-
-						var arrowHelper = new THREE.ArrowHelper( plane1.normal, new THREE.Vector3( 0, 0, 0 ), 200, 0xff0000 );
-						scene.add( arrowHelper );
-
-						var plane2 = new THREE.Plane();
-						plane2.setFromNormalAndCoplanarPoint(new THREE.Vector3(-.5,0,-1).normalize(),new THREE.Vector3( 0, 0, 0 ));
-
-						var arrowHelper = new THREE.ArrowHelper( plane2.normal, new THREE.Vector3( 0, 0, 0 ), 200, 0xff0000 );
-						scene.add( arrowHelper );
-						var newVertices = [];
-						var newVerticesMap = [];
-						var newVerticesIndex = 0;
-						var newFaces = [];
-						var endPointsIndex1 = [];
-						var endPointsIndex2 = [];
-
-						var material = new THREE.MultiMaterial( materials );
-						var object = new THREE.Mesh( geometry, material );
-						// scene.add(object);
-						console.log(geometry.clone());
-						geometry.applyMatrix(matrix);
-						geometry.verticesNeedUpdate = true;
-						console.log(geometry);
-
-						function inRange( p1, p2, point ){
-							if( p1.distanceToPoint( point ) > 0 && p2.distanceToPoint( point ) > 0 )
-								return true;
-							return false;
-						}
-
-
-						for(var i=0;i<geometry.faces.length;i++){
-
-							var face = geometry.faces[i];
-							// console.log(face);
-							var a = geometry.vertices[ face.a ];
-							var b = geometry.vertices[ face.b ];
-							var c = geometry.vertices[ face.c ];
-
-							var points = [ a, b, c ];
-							var outPointsFlag = [ 0, 0, 0 ];
-							var inPoints = [];
-							var outPoints = [];
-
-							if( inRange( plane1, plane2, a ) ){
-								outPointsFlag[0] = 1;
-							}
-
-							if( inRange( plane1, plane2, b ) ){
-								outPointsFlag[1] = 1;
-							}
-
-							if( inRange( plane1, plane2, c ) ){
-								outPointsFlag[2] = 1;
-							}
-
-							for(var k=0;k<outPointsFlag.length;k++){
-								if( outPointsFlag[k] ){
-									outPoints.push( points[k] );
-								}else{
-									inPoints.push( points[k] );
-								}
-							}
-
-
-							if( outPoints.length == 0 ){
-								newVertices.push( a, b, c );
-								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
-							}else if( outPoints.length == 1 ){
-
-								var line1 = new THREE.Line3( outPoints[0], inPoints[0] );
-								var line2 = new THREE.Line3( outPoints[0], inPoints[1] );
-
-								var intersectFlag1 = 1,intersectFlag2 = 1;
-
-								var point1, point2;
-
-								if ( ( point1 = plane1.intersectLine( line1 ) ) != undefined ){
-									intersectFlag1 = 1;
-								} else {
-									point1 = plane2.intersectLine( line1 );
-									intersectFlag1 = 2;
-								}
-
-								if ( ( point2 = plane1.intersectLine( line2 ) ) != undefined ){
-									intersectFlag2 = 1;
-								} else {
-									point2 = plane2.intersectLine( line2 );
-									intersectFlag2 = 2;
-								}
-
-
-								newVertices.push( inPoints[0], inPoints[1], point1, point2 );
-								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-3, newVertices.length-4 ) );
-								newFaces.push( new THREE.Face3( newVertices.length-2, newVertices.length-3, newVertices.length-4 ) );
-								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
-
-								intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
-								intersectFlag2 == 1 ? endPointsIndex1.push( newVertices.length-1 ) : endPointsIndex2.push( newVertices.length-1 );
-
-							}else if( outPoints.length == 2 ){
-
-								var line1 = new THREE.Line3( inPoints[0], outPoints[0] );
-								var line2 = new THREE.Line3( inPoints[0], outPoints[1] );
-
-								var intersectFlag1 = 1,intersectFlag2 = 1;
-
-								var point1, point2;
-
-								if ( ( point1 = plane1.intersectLine( line1 ) ) != undefined ){
-									intersectFlag1 = 1;
-								} else {
-									point1 = plane2.intersectLine( line1 );
-									intersectFlag1 = 2;
-								}
-
-								if ( ( point2 = plane1.intersectLine( line2 ) ) != undefined ){
-									intersectFlag2 = 1;
-								} else {
-									point2 = plane2.intersectLine( line2 );
-									intersectFlag2 = 2;
-								}
-
-								// var point1 = plane1.intersectLine( line1 )||plane2.intersectLine( line1 );
-								// var point2 = plane1.intersectLine( line2 )||plane2.intersectLine( line2 );
-
-
-								newVertices.push( inPoints[0], point1, point2 );
-								newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
-
-								intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
-								intersectFlag2 == 1 ? endPointsIndex1.push( newVertices.length-1 ) : endPointsIndex2.push( newVertices.length-1 );
-
-							}
-						}
-						console.log(endPointsIndex1.length);
-
-						for(var i=2;i<endPointsIndex1.length;i++){
-							newFaces.push( new THREE.Face3( endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1] ) );
-						}
-
-						for(var i=2;i<endPointsIndex2.length;i++){
-							newFaces.push( new THREE.Face3( endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1] ) );
-						}
-
-					
-
-						var newGeometry = new THREE.Geometry();
-						newGeometry.vertices = newVertices;
-						newGeometry.faces = newFaces;
-						newGeometry.computeFaceNormals();
-						var newMesh = new THREE.Mesh( newGeometry,ringMatetial );
-						scene.add(newMesh);
-						console.log(newMesh);
-						console.log(new Date().getTime() - startTime +'ms');
-						
-					}
-				);
-
-
-			
 			}
 
 			function isSpecial( c ){
@@ -332,7 +148,7 @@
 				var textArr=[];
 
 				// var text = "pqqp";
-				var text = "ABCDED";
+				var text = "abcdeABCDEFGHIJLhjkz";
 				var textMesh;
 				var start = 0;
 				var flag = 0;
@@ -359,16 +175,16 @@
 	
 				textMesh.width = textMesh.geometry.boundingBox.max.x -  textMesh.geometry.boundingBox.min.x;
 				textMesh.height = textMesh.geometry.boundingBox.max.y - textMesh.geometry.boundingBox.min.y;
+				textMesh.depth = textMesh.geometry.boundingBox.max.z - textMesh.geometry.boundingBox.min.z;
 
-				// console.log(width);
-				console.log(textMesh.width)
-				textMesh.position.set(-textMesh.width/2+80,-textMesh.height/2,430 +40)
+				// textMesh.position.set(-textMesh.width/2+80,-textMesh.height/2,430 +40);
 				// scene.add(textMesh);
-				var arrowHelper = new THREE.ArrowHelper( new THREE.Vector3(0,0,-1), textMesh.position, 200, 0xff0000 );
+				var arrowHelper = new THREE.ArrowHelper( new THREE.Vector3(0,-1,0), textMesh.position, 200, 0xff0000 );
 				scene.add( arrowHelper );
-		
-				var theta = (textMesh.width/(926*Math.PI))*Math.PI*2;
-				modifier.set( direction, axis, theta/2 ).modify( textMesh.geometry );
+
+				// edges = new THREE.FaceNormalsHelper( textMesh, 2, 0x00ff00, 1 );
+				// scene.add( edges );
+				bend( 400,textMesh);
 			}
 
 			function createFontGeometry( text ) {
@@ -445,7 +261,25 @@
 			}
 
 			function bend( radius,mesh ){
-				
+
+				var matrix = new THREE.Matrix4().setPosition( new THREE.Vector3( -mesh.width/2, 0, -mesh.depth/2 ) );
+				mesh.geometry.applyMatrix( matrix );
+				scene.add(mesh);
+				console.log(mesh.position);
+				var origin = new THREE.Vector3( 0, 0, -radius );
+				var innerRadius = radius - mesh.depth/2;
+				var innerCircumference = innerRadius*2*Math.PI;
+				var arrowHelper = new THREE.ArrowHelper( new THREE.Vector3(0,0,1), origin, innerRadius, 0xff0000 );
+				scene.add( arrowHelper );
+				for( var i=0; i<mesh.geometry.vertices.length; i++ ){
+					var point = mesh.geometry.vertices[i];
+					var pointRadius = radius + point.z;
+					var pointX = point.x;
+					var theta = pointX / innerCircumference*Math.PI*2;
+					mesh.geometry.vertices[i].set( pointRadius*Math.sin(theta),point.y,pointRadius*Math.cos(theta) ).add( origin );
+				}
+				mesh.geometry.verticesNeedUpdate = true;
+				// mesh.geometry.computeFaceNormals();
 			}
 
 
