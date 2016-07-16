@@ -10,22 +10,99 @@ var Ring = new function() {
 	var ringText;
 	var ringBody;
 	var ringMesh;
+	var ringMaterial;
 
-	var materials = [];
-	var goldMaterial = new THREE.MeshPhongMaterial( { color: 0xffce42 } );
+	var ringOption = {
+		text : 'hello',
+		depth : 70,
+		textHeight : 158,
+		modelUrl : '',
+		fontUrl : ''
+	};
 
-	var ringMatetial = new THREE.MeshPhongMaterial( { color: 0xffce42 , specular : 0x333333, combine : THREE.MixOperation, shininess : 40, reflectivity: 0.55 ,side:THREE.DoubleSide} );
+	var ringMaterials = [];
 
-	var projector = new THREE.Projector();
+	var urls = [ "img/px.jpg", "img/nx.jpg", 
+				"img/py.jpg", "img/ny.jpg", 
+				"img/pz.jpg", "img/nz.jpg"];
+
+	var cube = THREE.ImageUtils.loadTextureCube(urls);
+	cube.format = THREE.RGBFormat;
+
+	ringMaterials.push( makeMaterial({
+									color: 0xffce42, 
+									specular : 0x333333, 
+									combine : THREE.MixOperation, 
+									envMap : cube,
+									shininess : 54, 
+									reflectivity: 0.75 ,
+									side:THREE.DoubleSide, 
+									shading: THREE.SmoothShading
+							},'gold_yellow') );
+
+	ringMaterials.push( makeMaterial({
+									color: 0xff9993, 
+									specular : 0x333333, 
+									combine : THREE.MixOperation, 
+									envMap : cube,
+									shininess : 54, 
+									reflectivity: 0.75 ,
+									side:THREE.DoubleSide, 
+									shading: THREE.SmoothShading
+							},'gold_red') );
+
+	ringMaterials.push( makeMaterial({
+									color: 0xffffff, 
+									specular : 0xffffff, 
+									combine : THREE.MixOperation, 
+									envMap : cube,
+									shininess : 54, 
+									reflectivity: 0.75 ,
+									side:THREE.DoubleSide, 
+									shading: THREE.SmoothShading
+							},'silver') );
+
 
 	init();
 	animate();
 
 	function start( text ){
 		
-		loadResource( text, 'fonts/Script_MT_Bold_Regular.json', 'models/o.js', startBuild );
+		initOption( text, 
+					'gold_yellow',
+					'9-4',
+					'Script_MT_Bold_Regular' );
+
+		loadResource( ringOption.text, ringOption.fontUrl, ringOption.modelUrl, startBuild );
 
 	}
+
+	function initOption( text, materialName, ringModel, fontName ){
+
+		ringMaterial = getMaterialByName( materialName );
+
+		ringOption.text = text;
+
+		ringOption.modelUrl = 'models/' + ringModel + '.js';
+
+		ringOption.fontUrl = 'fonts/' + fontName + '.json';
+
+	}
+
+	function makeMaterial( options, name ){
+		var material = new THREE.MeshPhongMaterial( options );
+		material.name = name;
+		return material;
+	}
+
+	function getMaterialByName( name ){
+		for(var i=0; i<ringMaterials.length;i++){
+			if( ringMaterials[i].name == name ){
+				return ringMaterials[i];
+			}
+		}
+		return ringMaterials[0];
+	};
 
 	function loadResource ( text, fontUrl, modelUrl, callback ){
 
@@ -65,17 +142,25 @@ var Ring = new function() {
 
 		// lights
 
-		light = new THREE.DirectionalLight( 0xffffff );
+		light = new THREE.DirectionalLight( 0xffffe6,0.95 );
 		light.position.set( 0, 100, 200 );
 		scene.add( light );
 
-		light = new THREE.DirectionalLight( 0xffffff );
+		light = new THREE.DirectionalLight( 0xffffe6,0.75 );
 		light.position.set( 0, -100, -200 );
 		scene.add( light );
+
+		var light = new THREE.HemisphereLight( 0xcbf1fe, 0xfff2d6, 0.4 );
+		scene.add( light );
+
+		var light = new THREE.AmbientLight( 0x404040 ); 
+		scene.add( light );
+
 
 		// renderer
 
 		renderer = new THREE.WebGLRenderer( { antialias: true } );
+		renderer.setPixelRatio( window.devicePixelRatio );
 		renderer.setClearColor( 0xffffff );
 		renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -88,28 +173,13 @@ var Ring = new function() {
 		stats.domElement.style.zIndex = 100;
 		container.appendChild( stats.domElement );
 
-		//
-
-		var loader = new THREE.JSONLoader();
-
-		loader.load(
-			'models/o.js',
-			function ( geometry, materials ) {
-
-
-
-				console.log(new Date().getTime() - startTime +'ms');
-				
-			}
-		);
-
 	
 		window.addEventListener( 'resize', onWindowResize, false );
 
 	}
 
 	function buildRing( geometry ){
-		console.log(geometry);
+
 		var radius;
 		var origin = new THREE.Vector3();
 		var newVertices = [];
@@ -268,8 +338,11 @@ var Ring = new function() {
 		var newGeometry = new THREE.Geometry();
 		newGeometry.vertices = newVertices;
 		newGeometry.faces = newFaces;
+		newGeometry.mergeVertices();
 		newGeometry.computeFaceNormals();
-		ringBody = new THREE.Mesh( newGeometry,ringMatetial );
+        newGeometry.computeVertexNormals();
+
+		ringBody = new THREE.Mesh( newGeometry,ringMaterial );
 		scene.add(ringBody);
 		ringText =  bend( origin, radius, ringText );
 		ringText.position.y = -70;
@@ -283,32 +356,9 @@ var Ring = new function() {
 		return false;
 	}
 
-	function linkSplit( text ){
-		var textArr = [];
-		var start = 0;
-		var flag = 0;
-		for( var i = 0; i < text.length - 1; i++ ){
-			if( isSpecial( text[i] ) ){
-				if( flag ){
-					flag = 0;
-					textArr.push( text.subString( start, i ) );
-				}
-				textArr.push( text[i] );
-			}else{
-				if( !flag ){
-					flag = 1;
-					start = i;
-				}
-			}
-		}
-
-		return textArr;
-	}
 
 
 	function textMeshBuild( text, textFont ){
-
-		var textArr=[];
 
 		var textMesh;
 		var start = 0;
@@ -342,8 +392,8 @@ var Ring = new function() {
 	function createFontGeometry( text, textFont ) {
 
 		return new THREE.TextGeometry( text,{
-						size: 158,
-						height: 70,
+						size: ringOption.textHeight,
+						height: ringOption.depth,
 						curveSegments: 4,
 						font: textFont,
 						weight: "bold",
@@ -359,7 +409,7 @@ var Ring = new function() {
 		if( textMesh === undefined ){
 			return new THREE.Mesh( 
 				createFontGeometry( text, textFont ),
-				ringMatetial
+				ringMaterial
 			);
 		}
 		textMesh.geometry.computeBoundingBox();
@@ -406,7 +456,7 @@ var Ring = new function() {
 
 		return new THREE.Mesh( 
 				oldTextGeometry,
-				ringMatetial
+				ringMaterial
 			);
 
 	}
@@ -428,6 +478,9 @@ var Ring = new function() {
 			mesh.geometry.vertices[i].set( pointRadius*Math.sin(theta),point.y,pointRadius*Math.cos(theta) ).add( origin );
 		}
 		mesh.geometry.verticesNeedUpdate = true;
+		mesh.geometry.mergeVertices();
+		mesh.geometry.computeFaceNormals();
+        mesh.geometry.computeVertexNormals();
 
 		return mesh;
 	}
