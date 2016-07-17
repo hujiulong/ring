@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -18,21 +16,73 @@
 				margin: 0px;
 				overflow: hidden;
 			}
+			#container{
+				position: absolute;
+				z-index: 1;
+			}
+
+			.dg.ac{
+				position: absolute;
+				z-index: 2 !important;
+			}
 
 		</style>
 	</head>
 
 	<body>
 		<div id="container"></div>
-		
 		<script src="js/libs/three.js"></script>
-		<script src="js/libs/GeometryUtils.js"></script>
 		<script src="js/controls/TrackballControls.min.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/ring.js"></script>
 		<script>
-			Ring.build('ABCDEF');
+			Ring.init( 'ABCABCABC', 						//文字内容				
+						'gold_yellow',						//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
+						'9-3',								//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
+						'Script_MT_Bold_Regular' );			//字体名字   在font目录下需要有同名json字体文件
+
+	
+			var config = {
+				text : 'ABCABCABC',
+				height : 140,
+				materialName : 'gold_yellow',
+				model : '9-3'
+			}
+
+
+			var gui = new dat.GUI();
+
+			gui.add(config,'text').onChange(function(){
+				Ring.change('text',config.text);
+			});
+
+
+			gui.add(config,'height',120,200).onChange(function(){
+				Ring.change('height',config.height);
+			});
+
+			gui.add(config,'materialName',{
+				'黄金' : 'gold_yellow',
+				'玫瑰金' : 'gold_red',
+				'铂金/银' : 'silver',
+			}).onChange(function(){
+				Ring.change('material',config.materialName);
+			});
+
+
+			gui.add(config,'model',{
+				'9-1' : '9-1',
+				'9-2' : '9-2',
+				'9-3' : '9-3',
+				'9-4' : '9-4',
+				'9-5' : '9-5',
+			}).onChange(function(){
+				config.height = 140;
+				Ring.change('model',config.model);
+			});
+
 		</script>
 	</body>
 </html>
