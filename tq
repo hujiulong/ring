@@ -1,0 +1,59 @@
+[33mcommit 2b929104d55ef655664147a8659b3edc955a4da6[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Sun Jul 17 13:05:13 2016 +0800
+
+    加入调节菜单及对应功能
+
+[33mcommit 10d1ab8ec4ad8a45a3a7dc4911790f32114ada7e[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Sat Jul 16 23:28:43 2016 +0800
+
+    金属反光
+
+[33mcommit 31c1d6c1146b6bc4a3bb824a76f23b2ae820fbce[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Sat Jul 16 15:29:35 2016 +0800
+
+    构造出戒指
+
+[33mcommit 0b36a9f1ce7bec02181cb896c9b5bf174746b373[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Fri Jul 15 23:38:21 2016 +0800
+
+    完成字体弯曲算法，粗略完成切割补面
+
+[33mcommit 14fd198d4ad1793ea65f45a1cbed5f362431b1b9[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Thu Jul 14 18:59:19 2016 +0800
+
+    完成模型切割算法
+
+[33mcommit 00561206f9982a49a54593adaf20e85083cd7cde[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Wed Jul 13 19:20:49 2016 +0800
+
+    模型切割测试
+
+[33mcommit f14dd65d6f8889764ab5788bbcd835ad03d27d7c[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Wed Jul 13 00:03:14 2016 +0800
+
+    戒圈切割，完成波浪形戒圈
+
+[33mcommit c0d5aa712ff1b9ae71050b5e092990c0b6c3c8d2[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Sat Jul 9 22:37:44 2016 +0800
+
+    弯曲文字，导入戒圈
+
+[33mcommit 1cd2e34ec792470ba72031feaeca9565674a696e[m
+Author: hujiulong <me@hujiulong.com>
+Date:   Sat Jul 9 02:06:31 2016 +0800
+
+    完成字符间间距修正
+
+[33mcommit d82857139690d7da62972ceaa22ec260136d453b[m
+Author: Hu Jiulong <me@hujiulong.com>
+Date:   Sat Jul 9 02:04:42 2016 +0800
+
+    Initial commit

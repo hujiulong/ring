@@ -592,6 +592,36 @@ var Ring = new function() {
 		return mesh;
 	}
 
+	function exportModel( type ){
+
+		var data;
+
+		type = type.toLowerCase();
+		
+		window.URL = window.URL || window.webkitURL;
+		window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
+
+		if( type == 'obj' ){
+
+			var exporter = new THREE.OBJExporter();
+			data = exporter.parse( scene );
+
+		} else if ( type == 'stl' ){
+
+			var exporter = new THREE.STLExporter();
+			data = exporter.parse( scene );
+
+		}
+
+		var link = document.createElement( 'a' );
+		link.style.display = 'none';
+		document.body.appendChild( link );
+		link.href = URL.createObjectURL(  new Blob( [ data ], { type: 'text/plain' } ) );
+		link.download = 'model.' + type;
+		link.click();
+
+	}
+
 
 	
 	function onWindowResize() {
@@ -619,7 +649,9 @@ var Ring = new function() {
 
 
 	return {
+
 		init : function ( text, materialName, ringModel, fontName ){
+
 			if(text.length > 13 ){
 				alert('文字太长');
 				return;
@@ -628,12 +660,19 @@ var Ring = new function() {
 			start( text, materialName, ringModel, fontName );
 
 		},
+
 		change : function( type, value ){
 			changeRing( type, value );
 		},
+
 		get : function( type ){
 			return getOption( type );
+		},
+
+		export : function( type ){
+			exportModel( type );
 		}
+
 	}
 
 }();

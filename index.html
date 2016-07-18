@@ -31,16 +31,18 @@
 
 	<body>
 		<div id="container"></div>
-		<script src="js/libs/three.js"></script>
+		<script src="js/libs/three.min.js"></script>
 		<script src="js/controls/TrackballControls.min.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
+		<script src="js/exporters/STLExporter.js"></script>
+		<script src="js/exporters/OBJExporter.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/ring.js"></script>
 		<script>
 			Ring.init( 'ABCABCABC', 						//文字内容				
 						'gold_yellow',						//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
-						'9-3',								//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
+						'9-2',								//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
 						'Script_MT_Bold_Regular' );			//字体名字   在font目录下需要有同名json字体文件
 
 	
@@ -48,7 +50,13 @@
 				text : 'ABCABCABC',
 				height : 140,
 				materialName : 'gold_yellow',
-				model : '9-3'
+				model : '9-2',
+				exportOBJ : function(){
+					Ring.export('obj');
+				},
+				exportSTL : function(){
+					Ring.export('stl');
+				}
 			}
 
 
@@ -82,6 +90,10 @@
 				config.height = 140;
 				Ring.change('model',config.model);
 			});
+
+			gui.add(config,'exportOBJ');
+			
+			gui.add(config,'exportSTL');
 
 		</script>
 	</body>
