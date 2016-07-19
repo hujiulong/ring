@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<script>
+
+		function isShape( text ){
+
+			var pattern =  /\[\S+\]/g;
+			
+			return pattern.test( text );
+
+		}
+
+		console.log(isShape('asbs'));
+		console.log(isShape('[heart'));
+		var text = '1234';
+		console.log(text.substring(1,text.length-1))
+	</script>
+</body>
+</html>

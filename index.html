@@ -40,14 +40,9 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/ring.js"></script>
 		<script>
-			Ring.init( 'ABCABCABC', 						//文字内容				
-						'gold_yellow',						//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
-						'9-2',								//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
-						'Script_MT_Bold_Regular' );			//字体名字   在font目录下需要有同名json字体文件
 
-	
 			var config = {
-				text : 'ABCABCABC',
+				text : '[heart]',
 				height : 140,
 				materialName : 'gold_yellow',
 				model : '9-2',
@@ -58,6 +53,11 @@
 					Ring.export('stl');
 				}
 			}
+
+			Ring.init( config.text, 						//文字内容				
+					 	config.materialName,						//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
+						config.model,								//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
+						'Script_MT_Bold_Regular' );			//字体名字   在font目录下需要有同名json字体文件
 
 
 			var gui = new dat.GUI();
