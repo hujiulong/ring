@@ -450,9 +450,21 @@ var Ring = new function() {
 
 
 				newVertices.push( inPoints[0], inPoints[1], point1, point2 );
-				newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-3, newVertices.length-4 ) );
-				newFaces.push( new THREE.Face3( newVertices.length-2, newVertices.length-3, newVertices.length-4 ) );
-				newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-3, newVertices.length-4 ) );
+				// newFaces.push( new THREE.Face3( newVertices.length-2, newVertices.length-3, newVertices.length-4 ) );
+				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
+				// console.log(vec);
+				// var arrowHelper = new THREE.ArrowHelper( vec, inPoints[0], 90, 0xff0000 );
+				// scene.add( arrowHelper );
+
+				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
+				newFaces.push( createUniformFace( newVertices, newVertices.length-2, newVertices.length-3, newVertices.length-4, vec ) );
+				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-4, vec ) );
+
+				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-3, newVertices.length-4, vec ) );
+				// newFaces.push( createUniformFace( newVertices, newVertices.length-2, newVertices.length-3, newVertices.length-4, vec ) );
+				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-4, vec ) );
 
 				intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
 				intersectFlag2 == 1 ? endPointsIndex1.push( newVertices.length-1 ) : endPointsIndex2.push( newVertices.length-1 );
@@ -481,7 +493,12 @@ var Ring = new function() {
 				}
 
 				newVertices.push( inPoints[0], point1, point2 );
-				newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
+
+				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
+
+				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
+
+				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
 
 				intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
 				intersectFlag2 == 1 ? endPointsIndex1.push( newVertices.length-1 ) : endPointsIndex2.push( newVertices.length-1 );
@@ -489,34 +506,100 @@ var Ring = new function() {
 			}
 		}
 
-		for(var i=2;i<endPointsIndex1.length;i++){
-			newFaces.push( new THREE.Face3( endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1] ) );
-		}
+		// var vec = new THREE.Vector3( 0,0,-1 );
+		// for(var i=2;i<endPointsIndex1.length;i++){
+		// 	// newFaces.push( createUniformFace( newVertices, endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1],vec ) );
+		// }
 
-		for(var i=2;i<endPointsIndex2.length;i++){
-			newFaces.push( new THREE.Face3( endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1] ) );
-		}
+		// for(var i=2;i<endPointsIndex2.length;i++){
+		// 	// newFaces.push( createUniformFace( newVertices, endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1],vec ) );
+		// }
+
 
 	
-
 		var newGeometry = new THREE.Geometry();
 		newGeometry.vertices = newVertices;
 		newGeometry.faces = newFaces;
+
+		var planVertices = [];
+		var planFaces = [];
+		var planeGeo = new THREE.Geometry();
+
+		planVertices.push( newVertices[endPointsIndex1[0]], newVertices[endPointsIndex2[0]] );
+
+		var vec = new THREE.Vector3( 0,0,-1 );
+		for(var i=2;i<endPointsIndex1.length;i++){
+			planVertices.push( newVertices[ endPointsIndex1[i-1] ], newVertices[ endPointsIndex1[i] ] );
+			planFaces.push( createUniformFace( planVertices, 0,planVertices.length-1,planVertices.length-2,vec ) );
+			// planeGeo.faces.push( createUniformFace( newVertices, endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1],vec ) );
+		}
+
+		for(var i=2;i<endPointsIndex2.length;i++){
+			planVertices.push( newVertices[ endPointsIndex2[i-1] ], newVertices[ endPointsIndex2[i] ] );
+			planFaces.push( createUniformFace( planVertices, 1,planVertices.length-1,planVertices.length-2,vec ) );
+			// newGeometry.faces.push( createUniformFace( newVertices, endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1],vec ) );
+		}
+
+		planeGeo.vertices = planVertices;
+		planeGeo.faces = planFaces;
+
+		planeGeo.mergeVertices();
+		planeGeo.computeFaceNormals();
+		planeGeo.computeVertexNormals();
+
 		newGeometry.mergeVertices();
 		newGeometry.computeFaceNormals();
-        newGeometry.computeVertexNormals();
+		newGeometry.computeVertexNormals();
+
+		var planMesh = new THREE.Mesh( planeGeo, ringMaterial );
+
 
 		ringBody = new THREE.Mesh( newGeometry,ringMaterial );
+
+		ringObject.add(planMesh)
+
 		scene.add(ringBody);
 		ringObject.add( ringBody );
 		ringText =  bend( origin, radius, ringText );
 		ringText.position.copy( ringOption.positionCalibrated );
 		ringText.position.y -= ringOption.textHeight/2;
 		ringText.rotation.copy( ringOption.rotationCalibrated );
-		ringObject.add( ringText );
+		// ringObject.add( ringText );
 
 		scene.add(ringObject);
-		console.log(ringObject)
+
+	}
+
+	function createUniformFace( vertices, a, b, c, vec ){
+
+		var normal = computeNormal( vertices[a].clone(), vertices[b].clone(), vertices[c].clone() );
+
+		if( vec.angleTo( normal ) <= Math.PI/2 ){
+			return new THREE.Face3( a, b, c );
+		} 
+
+		return new THREE.Face3( c, b, a );
+
+	}
+
+	function computeNormal( va, vb, vc ){
+
+		var cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+		cb.subVectors( vc, vb );
+		ab.subVectors( va, vb );
+		cb.cross( ab );
+
+		return cb.normalize();
+
+	}
+
+	function getInnerPoint( point, origin, radius ){
+
+		var dir = point.sub( origin.clone().setY( point.y ) );
+
+		return dir.setLength ( radius );
+
 	}
 
 	function isShape( text ){
