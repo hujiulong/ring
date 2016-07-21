@@ -1,6 +1,7 @@
 var Ring = new function() {
 
-	var startTime = new Date().getTime();
+	var startTime = new Date().getTime();				//用来计算各部分代码所花费的时间
+
 	if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 	var container, stats;
@@ -13,7 +14,16 @@ var Ring = new function() {
 	var ringBody;
 	var ringMaterial;
 
-	var ringOption = {
+
+	// 各种资源的位置
+	var baseUrl = {
+		font : 'fonts/',
+		model : 'models/',
+		shape : 'models/'
+	};
+
+	// 全局设置
+	var ringOptions = {
 		text : 'hello',
 		depth : 70,
 		height : 0,
@@ -25,17 +35,18 @@ var Ring = new function() {
 		materialName : 'gold_yellow',
 		fontName : '',
 		positionCalibrated : new THREE.Vector3( 0, 0, 0 ),
-		rotationCalibrated : new THREE.Euler( 0, 0, 0),
+		rotationCalibrated : new THREE.Euler( 0, 0, 0 ),
 		cutFlag : true
 	};
 
+	// 缓存数据，减少改变参数时的重复加载
 	var ringData = {
 		font : null,
 		shapeGeometry : null,
-		ringGeometry : null,
-		textMesh : null
+		ringGeometry : null
 	}
 
+	// 材质
 	var ringMaterials = [];
 
 	var urls = [ "img/px.jpg", "img/nx.jpg", 
@@ -90,116 +101,147 @@ var Ring = new function() {
 
 	}
 
+	function getUrl( type, name ){
+
+		switch( type ){
+
+			case 'models' : 
+				return baseUrl.model + name + '.js';
+			case 'font' :
+				return baseUrl.font + name + '.json';
+			case 'shape' :
+				return baseUrl.shape + name.substring( 1, name.length - 1 ) +'.js';
+
+		}
+
+		return null;
+	}
+
+
+	// 初始化ringOption
 	function initOption( text, materialName, ringModel, fontName ){
 
 		ringMaterial = getMaterialByName( materialName );
 
-		ringOption.materialName = materialName;
+		ringOptions.materialName = materialName;
 
-		ringOption.fontName = fontName;
+		ringOptions.fontName = fontName;
 
-		ringOption.text = text;
+		ringOptions.text = text;
 
-		ringOption.modelUrl = 'models/' + ringModel + '.js';
+		ringOptions.modelUrl = getUrl( 'models', ringModel );
 
 		if( isShape( text ) ){
-			ringOption.type = 'shape';
-			ringOption.shapeUrl = 'models/' + text.substring(1,text.length-1) + '.js';
-			ringOption.fontUrl = 'fonts/' + fontName + '.json';
+			ringOptions.type = 'shape';
+			ringOptions.shapeUrl = getUrl( 'shape', text );
+			ringOptions.fontUrl = getUrl( 'font', fontName );
 		} else {
-			ringOption.type = 'text';
-			ringOption.fontUrl = 'fonts/' + fontName + '.json';
+			ringOptions.type = 'text';
+			ringOptions.fontUrl = getUrl( 'font', fontName );
 		}
 
 		if( ringModel == '9-1' ){
 
-			if( ringOption.type == 'text' ){
-				ringOption.rotationCalibrated.set( 0, 0, 0 );
-				ringOption.positionCalibrated.set( 0, 0, 0 );
-				ringOption.cutFlag = true;
+			if( ringOptions.type == 'text' ){
+				ringOptions.rotationCalibrated.set( 0, 0, 0 );
+				ringOptions.positionCalibrated.set( 0, 0, 0 );
+				ringOptions.cutFlag = true;
 			}
 
 		} else if( ringModel == '9-2' ){
 
-			if( ringOption.type == 'text' ){
-				ringOption.rotationCalibrated.set( 0, 0, 0 );
-				ringOption.positionCalibrated.set( 0, 0, 0 );
-				ringOption.cutFlag = true;
-			} else if ( ringOption.type == 'shape' ){
-				ringOption.rotationCalibrated.set( 0, 0, 0 );
-				ringOption.positionCalibrated.set( 0, 0, -20 );
+			if( ringOptions.type == 'text' ){
+				ringOptions.rotationCalibrated.set( 0, 0, 0 );
+				ringOptions.positionCalibrated.set( 0, 0, 0 );
+				ringOptions.cutFlag = true;
+			} else if ( ringOptions.type == 'shape' ){
+				ringOptions.rotationCalibrated.set( 0, 0, 0 );
+				ringOptions.positionCalibrated.set( 0, 0, -20 );
 			}
 
-			ringOption.cutFlag = true;
+			ringOptions.cutFlag = true;
 
 		} else if( ringModel == '9-3' ){
 
-			if( ringOption.type == 'text' ){
-				ringOption.textHeight = 150;
-				ringOption.rotationCalibrated.set( 0, 0, 6/180*Math.PI );
-				ringOption.positionCalibrated.set( 0, 37, 0 );
-				ringOption.cutFlag = false;
+			if( ringOptions.type == 'text' ){
+				ringOptions.textHeight = 150;
+				ringOptions.rotationCalibrated.set( 0, 0, 6/180*Math.PI );
+				ringOptions.positionCalibrated.set( 0, 37, 0 );
+				ringOptions.cutFlag = false;
 			}
 
 		} else if( ringModel == '9-4' ){
 
-			if( ringOption.type == 'text' ){
-				ringOption.rotationCalibrated.set( 0, 0, 0 );
-				ringOption.positionCalibrated.set( -5, 0, -20 );
-				ringOption.cutFlag = true;
+			if( ringOptions.type == 'text' ){
+				ringOptions.rotationCalibrated.set( 0, 0, 0 );
+				ringOptions.positionCalibrated.set( -5, 0, -20 );
+				ringOptions.cutFlag = true;
 			}
 
 		} else if( ringModel == '9-5' ){
 
-			if( ringOption.type == 'text' ){
-				ringOption.rotationCalibrated.set( 0, 0, 0 );
-				ringOption.positionCalibrated.set( 0, 0, 0 );
-				ringOption.cutFlag = true;
-				ringOption.depth = 50;
+			if( ringOptions.type == 'text' ){
+				ringOptions.rotationCalibrated.set( 0, 0, 0 );
+				ringOptions.positionCalibrated.set( 0, 0, 0 );
+				ringOptions.cutFlag = true;
+				ringOptions.depth = 50;
 			}
 
+		} else {
+			ringOptions.rotationCalibrated.set( 0, 0, 0 );
+			ringOptions.positionCalibrated.set( 0, 0, 0 );
+			ringOptions.cutFlag = true;
 		}
 
 	}
 
-
+	// 改变戒指参数
 	function changeRing( type, value ){
 
 		if( type == 'text' ){
 
-			ringOption.text = value;
-			if( isShape(ringOption.text) ){
-				ringOption.type = 'shape';
-			} else {
-				ringOption.type = 'text'
-			}
 			ringObject.remove( ringBody );
 			ringObject.remove( ringText );
 			scene.remove( ringObject );
 			ringObject = new THREE.Object3D();
-			startBuild( ringData.ringGeometry.clone() );
+
+			ringOptions.text = value;
+			if( isShape(ringOptions.text) ){
+				ringOptions.type = 'shape';
+				ringOptions.shapeUrl = getUrl( 'shape', ringOptions.text );
+
+				if( ringData.shapeGeometry == null){
+					loadJSON( ringOptions.shapeUrl, startBuild );
+				}
+
+			} else {
+				ringOptions.type = 'text';
+				startBuild();
+			}
 
 		} else if ( type == "height" ){
-			console.log(value/ringOption.height)
-			ringObject.scale.y = value/ringOption.height;
+			console.log(value/ringOptions.height)
+			ringObject.scale.y = value/ringOptions.height;
 
 		} else if ( type == "material" ){
 
 			var material = getMaterialByName( value );
-			ringObject.children[0].material = material;
-			ringObject.children[1].material = material;
+			for(var i = 0;i<ringObject.children.length;i++){
+				ringObject.children[i].material = material;
+			}
+
 
 		} else if ( type == 'model' ){
 
-			initOption( ringOption.text,ringOption.materialName,value,ringOption.fontName );
+			initOption( ringOptions.text,ringOptions.materialName,value,ringOptions.fontName );
 
 			ringObject.remove( ringBody );
 			ringObject.remove( ringText );
 			scene.remove( ringObject );
 			ringObject = new THREE.Object3D();
-			ringOption.modelUrl = 'models/' + value + '.js';
+			ringOptions.modelUrl = 'models/' + value + '.js';
 			var JSONLoader = new THREE.JSONLoader();
-			JSONLoader.load( ringOption.modelUrl, function ( geometry, materials ) {
+			JSONLoader.load( ringOptions.modelUrl, function ( geometry, materials ) {
 				ringData.ringGeometry = geometry.clone();
 
 				startBuild( geometry );
@@ -212,8 +254,10 @@ var Ring = new function() {
 	function getOption( type ){
 		
 		switch( type ){
-			case 'text' : return ringOption.text;
-			case 'height' : return ringOption.height;
+			case 'text' : 
+				return ringOptions.text;
+			case 'height' : 
+				return ringOptions.height;
 		}
 	}
 
@@ -241,26 +285,28 @@ var Ring = new function() {
 
 		function loadRing( ){
 
-			FontLoader.load( ringOption.fontUrl, function ( response ) {
+			FontLoader.load( ringOptions.fontUrl, function ( response ) {
 				font = response;
 				ringData.font = font;
 
-				JSONLoader.load( ringOption.modelUrl, function ( geometry, materials ) {
+				JSONLoader.load( ringOptions.modelUrl, function ( geometry, materials ) {
 					ringData.ringGeometry = geometry.clone();
-					callback( geometry );
+					callback();
 				});
 
 			} );
 		}
 
-		if ( ringOption.type == 'shape' ){
+		if ( ringOptions.type == 'shape' ){
 
-			JSONLoader.load( ringOption.shapeUrl, function (  geometry, materials  ) {
+
+
+			JSONLoader.load( ringOptions.shapeUrl, function (  geometry, materials  ) {
 				ringData.shapeGeometry = geometry;
 				loadRing();
 			} );
 
-		} else if ( ringOption.type == 'text' ){
+		} else if ( ringOptions.type == 'text' ){
 
 			loadRing();
 
@@ -268,19 +314,67 @@ var Ring = new function() {
 
 	}
 
+	function loadFont( callback ){
 
-	function startBuild( ringGeometry ){
+		var loader = new THREE.FontLoader();
 
-		if( ringOption.type == 'shape' ){
-			ringText = shapeMeshBuild( ringData.shapeGeometry.clone() );
+		loader.load( ringOptions.fontUrl, function ( response ) {
 
-		} else if( ringOption.type == 'text' ) {
+			ringData.font = font;
+			callback();
 
-			ringText = textMeshBuild( ringOption.text, ringData.font );
+		} );
+
+	}
+
+	function loadJSON( url, callback ){
+
+		var loader = new THREE.JSONLoader();
+
+		var url;
+
+		if( ringOptions.type == 'shape' ){
+
+			url = ringOptions.shapeUrl;
+
+		} else if (  ringOptions.type == 'text'  ){
+
+			url = ringOptions.modelUrl;
 
 		}
 
-		ringBody = buildRing( ringGeometry );
+		loader.load( url, function ( geometry, materials ) {
+
+			if( ringOptions.type == 'shape' ){
+
+				ringData.shapeGeometry = geometry;
+
+			} else if (  ringOptions.type == 'text'  ){
+
+				ringData.ringGeometry = geometry;
+
+			}
+
+			callback();
+		});
+	}
+
+
+	function startBuild(){
+
+		console.log( 'load ' + (new Date().getTime() - startTime) +'ms' );
+
+		if( ringOptions.type == 'shape' ){
+
+			ringText = shapeMeshBuild();
+
+		} else if( ringOptions.type == 'text' ) {
+
+			ringText = textMeshBuild( ringOptions.text, ringData.font );
+
+		}
+
+		ringBody = buildRing( );
 
 	}
 
@@ -340,7 +434,9 @@ var Ring = new function() {
 
 	}
 
-	function buildRing( geometry ){
+	function buildRing( ){
+
+		var geometry = ringData.ringGeometry.clone();
 
 		var radius;
 		var origin = new THREE.Vector3();
@@ -359,18 +455,18 @@ var Ring = new function() {
 
 		origin.set( radius + geometry.boundingBox.min.x , 0, radius + geometry.boundingBox.min.z);
 
-		ringOption.height = geometry.boundingBox.max.y - geometry.boundingBox.min.y;
+		ringOptions.height = geometry.boundingBox.max.y - geometry.boundingBox.min.y;
 
 		var theta = (ringText.width/2-7)/(radius+ringText.depth/2);
 
 		var normal1 = new THREE.Vector3().crossVectors( 
-											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0),theta).normalize(), 
-											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0),theta).normalize()
+											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), theta).normalize(), 
+											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0), theta).normalize()
 										);
 
 		var normal2 = new THREE.Vector3().crossVectors( 
-											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0),-theta).normalize(), 
-											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0),-theta).normalize()
+											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), -theta).normalize(), 
+											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0), -theta).normalize()
 										);
 	
 		var plane1 = new THREE.Plane();
@@ -380,7 +476,7 @@ var Ring = new function() {
 		plane2.setFromNormalAndCoplanarPoint( normal2.normalize().negate(), origin);
 
 		function inRange( p1, p2, point ){
-			if( ringOption.cutFlag && p1.distanceToPoint( point ) > 0 && p2.distanceToPoint( point ) > 0 )
+			if( ringOptions.cutFlag && p1.distanceToPoint( point ) > 0 && p2.distanceToPoint( point ) > 0 )
 				return true;
 			return false;
 		}
@@ -450,22 +546,12 @@ var Ring = new function() {
 
 
 				newVertices.push( inPoints[0], inPoints[1], point1, point2 );
-				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-3, newVertices.length-4 ) );
-				// newFaces.push( new THREE.Face3( newVertices.length-2, newVertices.length-3, newVertices.length-4 ) );
-				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+
 				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
-				// console.log(vec);
-				// var arrowHelper = new THREE.ArrowHelper( vec, inPoints[0], 90, 0xff0000 );
-				// scene.add( arrowHelper );
 
 				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
 				newFaces.push( createUniformFace( newVertices, newVertices.length-2, newVertices.length-3, newVertices.length-4, vec ) );
-				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-4, vec ) );
-
-				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-3, newVertices.length-4, vec ) );
-				// newFaces.push( createUniformFace( newVertices, newVertices.length-2, newVertices.length-3, newVertices.length-4, vec ) );
-				// newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-4, vec ) );
-
+		
 				intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
 				intersectFlag2 == 1 ? endPointsIndex1.push( newVertices.length-1 ) : endPointsIndex2.push( newVertices.length-1 );
 
@@ -496,8 +582,6 @@ var Ring = new function() {
 
 				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
 
-				// newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-3 ) );
-
 				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
 
 				intersectFlag1 == 1 ? endPointsIndex1.push( newVertices.length-2 ) : endPointsIndex2.push( newVertices.length-2 );
@@ -505,16 +589,6 @@ var Ring = new function() {
 
 			}
 		}
-
-		// var vec = new THREE.Vector3( 0,0,-1 );
-		// for(var i=2;i<endPointsIndex1.length;i++){
-		// 	// newFaces.push( createUniformFace( newVertices, endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1],vec ) );
-		// }
-
-		// for(var i=2;i<endPointsIndex2.length;i++){
-		// 	// newFaces.push( createUniformFace( newVertices, endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1],vec ) );
-		// }
-
 
 	
 		var newGeometry = new THREE.Geometry();
@@ -525,24 +599,27 @@ var Ring = new function() {
 		var planFaces = [];
 		var planeGeo = new THREE.Geometry();
 
-		planVertices.push( newVertices[endPointsIndex1[0]], newVertices[endPointsIndex2[0]] );
+		if( ringOptions.cutFlag && endPointsIndex1.length > 0 && endPointsIndex2.length > 0 ){
+			planVertices.push( newVertices[endPointsIndex1[0]], newVertices[endPointsIndex2[0]] );
+		}
 
 		var vec = new THREE.Vector3( 0,0,-1 );
 		for(var i=2;i<endPointsIndex1.length;i++){
+
 			planVertices.push( newVertices[ endPointsIndex1[i-1] ], newVertices[ endPointsIndex1[i] ] );
 			planFaces.push( createUniformFace( planVertices, 0,planVertices.length-1,planVertices.length-2,vec ) );
-			// planeGeo.faces.push( createUniformFace( newVertices, endPointsIndex1[0],endPointsIndex1[i],endPointsIndex1[i-1],vec ) );
+			
 		}
+
 
 		for(var i=2;i<endPointsIndex2.length;i++){
 			planVertices.push( newVertices[ endPointsIndex2[i-1] ], newVertices[ endPointsIndex2[i] ] );
 			planFaces.push( createUniformFace( planVertices, 1,planVertices.length-1,planVertices.length-2,vec ) );
-			// newGeometry.faces.push( createUniformFace( newVertices, endPointsIndex2[0],endPointsIndex2[i],endPointsIndex2[i-1],vec ) );
+
 		}
 
 		planeGeo.vertices = planVertices;
 		planeGeo.faces = planFaces;
-
 		planeGeo.mergeVertices();
 		planeGeo.computeFaceNormals();
 		planeGeo.computeVertexNormals();
@@ -551,22 +628,21 @@ var Ring = new function() {
 		newGeometry.computeFaceNormals();
 		newGeometry.computeVertexNormals();
 
-		var planMesh = new THREE.Mesh( planeGeo, ringMaterial );
-
+		newGeometry.merge( planeGeo );
 
 		ringBody = new THREE.Mesh( newGeometry,ringMaterial );
-
-		ringObject.add(planMesh)
 
 		scene.add(ringBody);
 		ringObject.add( ringBody );
 		ringText =  bend( origin, radius, ringText );
-		ringText.position.copy( ringOption.positionCalibrated );
-		ringText.position.y -= ringOption.textHeight/2;
-		ringText.rotation.copy( ringOption.rotationCalibrated );
-		// ringObject.add( ringText );
+		ringText.position.copy( ringOptions.positionCalibrated );
+		ringText.position.y -= ringOptions.textHeight/2;
+		ringText.rotation.copy( ringOptions.rotationCalibrated );
+		ringObject.add( ringText );
 
 		scene.add(ringObject);
+
+		console.log( 'total ' + (new Date().getTime() - startTime) +'ms' );
 
 	}
 
@@ -613,7 +689,9 @@ var Ring = new function() {
 		return false;
 	}
 
-	function shapeMeshBuild( geometry ){
+	function shapeMeshBuild(){
+
+		var geometry = ringData.shapeGeometry.clone();
 
 		var mesh = new THREE.Mesh( geometry, ringMaterial );
 		mesh.geometry.applyMatrix( new THREE.Matrix4().makeScale( 50, 50, 50 ) );
@@ -629,6 +707,8 @@ var Ring = new function() {
 
 	function textMeshBuild( text, textFont ){
 
+		var text = ringOptions.text;
+
 		var textMesh;
 		var start = 0;
 		var flag = 0;
@@ -637,9 +717,9 @@ var Ring = new function() {
 			if( isSpecial( text[i] )|| i == text.length-1 ){
 				if( flag ){
 					flag = 0;
-					textMesh = textMeshPush( textMesh, text.substring( start, i ), textFont );
+					textMesh = textMeshPush( textMesh, text.substring( start, i ) );
 				}
-				textMesh = textMeshPush( textMesh, text[i], textFont );
+				textMesh = textMeshPush( textMesh, text[i] );
 			}else{
 				if( !flag ){
 					flag = 1;
@@ -658,13 +738,13 @@ var Ring = new function() {
 		
 	}
 
-	function createFontGeometry( text, textFont ) {
+	function createFontGeometry( text ) {
 
 		return new THREE.TextGeometry( text,{
-						size: ringOption.textHeight,
-						height: ringOption.depth,
+						size: ringOptions.textHeight,
+						height: ringOptions.depth,
 						curveSegments: 4,
-						font: textFont,
+						font: ringData.font,
 						weight: "bold",
 						style: "normal",
 						bevelEnabled: true,
