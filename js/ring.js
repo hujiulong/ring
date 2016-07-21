@@ -89,11 +89,18 @@ var Ring = new function() {
 									shading: THREE.SmoothShading
 							},'silver') );
 
+	function start( text, materialName, ringModel, fontName, domId ){
 
-	init();
-	animate();
+		var id = domId ? domId : 'container' ;
 
-	function start( text, materialName, ringModel, fontName ){
+		container = document.createElement('div');
+
+		container.id = id;
+
+		document.body.appendChild( container );
+
+		init();
+		animate();
 		
 		initOption( text, materialName, ringModel, fontName );
 
@@ -385,16 +392,13 @@ var Ring = new function() {
 		camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
 		camera.position.set( 0, 0, 2000 );
 
-		container = document.getElementById( 'container' );
+		controls = new THREE.OrbitControls( camera, container );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.15;
+		controls.minDistance = 1000;
+		controls.maxDistance = 2200;
+		controls.rotateSpeed = 0.15;
 
-		controls = new THREE.TrackballControls( camera, container );
-		controls.rotateSpeed = 1.0;
-		controls.zoomSpeed = 1.2;
-		controls.panSpeed = 0.8;
-		controls.noZoom = false;
-		controls.noPan = false;
-		controls.staticMoving = true;
-		controls.dynamicDampingFactor = 0.3;
 
 		scene = new THREE.Scene();
 
@@ -639,6 +643,9 @@ var Ring = new function() {
 		ringText.position.y -= ringOptions.textHeight/2;
 		ringText.rotation.copy( ringOptions.rotationCalibrated );
 		ringObject.add( ringText );
+
+		// edges = new THREE.EdgesHelper( ringText, 0x00ff00 );
+		// scene.add( edges );
 
 		scene.add(ringObject);
 
@@ -892,14 +899,15 @@ var Ring = new function() {
 
 	return {
 
-		init : function ( text, materialName, ringModel, fontName ){
+
+		init : function ( text, materialName, ringModel, fontName, domId){
 
 			if(text.length > 13 ){
 				alert('文字太长');
 				return;
 			}
 
-			start( text, materialName, ringModel, fontName );
+			start( text, materialName, ringModel, fontName, domId );
 
 		},
 
