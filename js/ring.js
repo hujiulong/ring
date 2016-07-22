@@ -91,13 +91,17 @@ var Ring = new function() {
 
 	function start( text, materialName, ringModel, fontName, domId ){
 
-		var id = domId ? domId : 'container' ;
+		container = document.getElementById( domId );
 
-		container = document.createElement('div');
+		if( container === null ){
 
-		container.id = id;
+			container = document.createElement('div');
+			
+			container.id = domId;
 
-		document.body.appendChild( container );
+			document.body.appendChild( container );
+
+		}
 
 		init();
 		animate();
@@ -390,13 +394,13 @@ var Ring = new function() {
 		// camera
 
 		camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-		camera.position.set( 0, 0, 2000 );
+		camera.position.set( 0, 700, 2800 );	
 
 		controls = new THREE.OrbitControls( camera, container );
 		controls.enableDamping = true;
 		controls.dampingFactor = 0.15;
 		controls.minDistance = 1000;
-		controls.maxDistance = 2200;
+		controls.maxDistance = 3500;
 		controls.rotateSpeed = 0.15;
 
 
