@@ -5,16 +5,23 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+			html {
+				height: 100%;
+			}
 			body {
 				color: #000;
 				font-family:Monospace;
 				font-size:13px;
 				text-align:center;
 				font-weight: bold;
-
+				height: 100%;
 				background-color: #fff;
 				margin: 0px;
 				overflow: hidden;
+			}
+			#container{
+				width: 100%;
+				height: 100%;
 			}
 			.dg.ac{
 				position: absolute;
@@ -25,7 +32,7 @@
 	</head>
 
 	<body>
-		<div id="con"></div>
+		<div id="container"></div>
 		<script src="js/libs/three.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/libs/Detector.min.js"></script>
@@ -37,7 +44,7 @@
 		<script>
 
 			var config = {
-				text : 'helloworld',
+				text : '',
 				height : 140,
 				materialName : 'gold_yellow',
 				model : '9-2',
@@ -53,7 +60,7 @@
 					 	config.materialName,				//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
 						config.model,						//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
 						'Script_MT_Bold_Regular',			//字体名字   在font目录下需要有同名json字体文件
-						'con' );						// id
+						'container' );						// id
 
 			var gui = new dat.GUI();
 
