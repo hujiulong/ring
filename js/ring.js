@@ -453,31 +453,71 @@ var Ring = new function() {
 	function buildRing( ){
 
 		ringObject.add( ringBody );
+
+		var convert = ['a','b','c'];
 	
 		if( ringText ){
 			ringText =  bend( ringBody.origin, ringBody.radius, ringText );
 			ringText.position.copy( ringOptions.positionCalibrated );
 			ringText.position.y -= ringOptions.textHeight/2;
 			ringText.rotation.copy( ringOptions.rotationCalibrated );
+
+			// for(var i=0;i< ringText.geometry.faces.length;i++){
+
+			// // 	ringText.geometry.faces[i].normal.negate()
+			// // // 	// var theta = ringText.geometry.faces[i].normal.angleTo( getCenter(ringText.geometry.vertices, ringText.geometry.faces[i] ).sub(ringBody.origin) );
+			// // // 	ringText.geometry.faces[i].normal = getCenter(ringText.geometry.vertices, ringText.geometry.faces[i] ).sub(ringBody.origin).normalize();
+			// // // 	if( true ){
+			// // // 	// // 	// console.log('1')
+			// 		for(var k=0;k<ringText.geometry.faces[i].vertexNormals.length;k++){
+			// 			// console.log(ringText.geometry.faces[i].vertexNormals[k].equals(ringText.geometry.faces[i].normal))
+			// 			ringText.geometry.faces[i].vertexNormals[k] .copy(ringText.geometry.faces[i].normal);
+			// 			// ringText.geometry.faces[i].vertexNormals[k]= ringText.geometry.vertices[ ringText.geometry.faces[i][convert[k]] ].clone().sub(ringBody.origin).normalize() ;
+			// 		}
+			// // // 	}
+			// // // 	// ringText.geometry.faces[i].vertexNormals.negate();
+			// // // 	// ringText.geometry.faces[i].vertexNormals = new THREE.Vector3( 0,0,1 );
+			// // // 	// ringText.geometry.faces[i].normal = new THREE.Vector3( 0,0,-1 );
+			// }
+			// ringText.geometry.normalsNeedUpdate = true;
+			// // ringText.geometry.computeVertexNormals ( true )
+
+			// console.log(ringText.geometry.faces[3].vertexNormals)
+
+
+
 			ringObject.add( ringText );
 		}
 
 		console.log( ringObject );
 
-		// edges = new THREE.EdgesHelper( ringText, 0x00ff00 );
-		// scene.add( edges );
+		edges = new THREE.EdgesHelper( ringText, 0x00ff00 );
+		scene.add( edges );
 
 		// edges = new THREE.FaceNormalsHelper( ringText, 20, 0xff0000, 1 );
 		// scene.add( edges );
 
 		// edges = new THREE.VertexNormalsHelper( ringText, 20, 0x0000ff, 1 );
-		// scene.add( edges );
+		// // scene.add( edges );
 
 		scene.add(ringObject);
 
 		console.log( 'total ' + (new Date().getTime() - startTime) +'ms' );
 
 	}
+
+	// function getCenter( vertices, face ){
+
+	// 	var a = vertices[ face.a ];
+	// 	var b = vertices[ face.b ];
+	// 	var c = vertices[ face.c ];
+
+	// 	return new THREE.Vector3( 
+	// 			( a.x + b.x + c.x ) / 3,
+	// 			( a.y + b.y + c.y ) / 3,
+	// 			( a.z + b.z + c.z ) / 3
+	// 		)
+	// }
 
 
 	function createRingBody(){
@@ -750,7 +790,7 @@ var Ring = new function() {
 
 	}
 
-	// 计算法线防线
+	// 计算法线方向
 	function computeNormal( va, vb, vc ){
 
 		var cb = new THREE.Vector3(), ab = new THREE.Vector3();
@@ -793,7 +833,7 @@ var Ring = new function() {
 						style: "normal",
 						bevelEnabled: true,
 						bevelThickness: 2,
-						bevelSize: 1,
+						bevelSize: 1
 					});
 	}
 
@@ -854,13 +894,45 @@ var Ring = new function() {
 
 	}
 
-	
+	function subdivisionFace( geometry ){
+
+		var newVertices = [];
+		var newFaces = [];
+
+		for( var i=0; i<geometry.faces.length; i++ ){
+
+			var face = geometry.faces[i];
+			var a = geometry.vertices[ face.a ];
+			var b = geometry.vertices[ face.b ];
+			var c = geometry.vertices[ face.c ];
+			var ab = new THREE.Vector3( (a.x + b.x)/2, (a.y + b.y)/2, (a.z + b.z)/2 );
+			var ac = new THREE.Vector3( (a.x + c.x)/2, (a.y + c.y)/2, (a.z + c.z)/2 );
+			var bc = new THREE.Vector3( (b.x + c.x)/2, (b.y + c.y)/2, (b.z + c.z)/2 );
+			newVertices.push( a, b, c, ab, ac, bc );
+			newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-6, newVertices.length-2 ) );
+			newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ) );
+			newFaces.push( new THREE.Face3( newVertices.length-5, newVertices.length-3, newVertices.length-1 ) );
+			newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+
+		}
+
+		var newGeometry = new THREE.Geometry();
+		newGeometry.faces = newFaces;
+		newGeometry.vertices = newVertices;
+		
+		return newGeometry;
+
+	}
 
 	function bend( origin, radius, mesh ){
 
 		var matrix = new THREE.Matrix4().setPosition( new THREE.Vector3( -mesh.width/2, 0, 0 ) );
 		mesh.geometry.applyMatrix( matrix );
-		
+
+	
+		mesh.geometry = subdivisionFace( mesh.geometry.clone() ).clone();
+		mesh.geometry = subdivisionFace( mesh.geometry.clone() ).clone();
+
 
 		var outerRadius = radius + mesh.depth/2;
 		var outerCircumference = outerRadius*2*Math.PI;
@@ -948,15 +1020,21 @@ var Ring = new function() {
 		},
 
 		change : function( type, value ){
+
 			changeRing( type, value );
+
 		},
 
 		get : function( type ){
+
 			return getOption( type );
+
 		},
 
 		export : function( type ){
+
 			exportModel( type );
+			
 		}
 
 	}
