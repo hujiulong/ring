@@ -492,9 +492,9 @@ var Ring = new function() {
 		console.log( ringObject );
 
 		edges = new THREE.EdgesHelper( ringText, 0x00ff00 );
-		scene.add( edges );
+		// scene.add( edges );
 
-		// edges = new THREE.FaceNormalsHelper( ringText, 20, 0xff0000, 1 );
+		edges = new THREE.FaceNormalsHelper( ringText, 20, 0xff0000, 1 );
 		// scene.add( edges );
 
 		// edges = new THREE.VertexNormalsHelper( ringText, 20, 0x0000ff, 1 );
@@ -894,7 +894,37 @@ var Ring = new function() {
 
 	}
 
-	function subdivisionFace( geometry ){
+	function subdivideFace( newVertices, newFaces, face, tot, cur ){
+
+
+		var a = newVertices[ face.a ];
+		var b = newVertices[ face.b ];
+		var c = newVertices[ face.c ];
+
+		var ab = new THREE.Vector3( (a.x + b.x)/2, (a.y + b.y)/2, (a.z + b.z)/2 );
+		var ac = new THREE.Vector3( (a.x + c.x)/2, (a.y + c.y)/2, (a.z + c.z)/2 );
+		var bc = new THREE.Vector3( (b.x + c.x)/2, (b.y + c.y)/2, (b.z + c.z)/2 );
+
+		newVertices.push( ab, ac, bc );
+
+		var face1 = new THREE.Face3( newVertices.length-3, face.a, newVertices.length-2 );
+		var face2 = new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 );
+		var face3 = new THREE.Face3( face.b, newVertices.length-3, newVertices.length-1 );
+		var face4 = new THREE.Face3( newVertices.length-1, newVertices.length-2, face.c );
+
+
+		if( tot == cur ){
+			newFaces.push( face1, face2, face3, face4 );
+
+		} else {
+			subdivideFace( newVertices, newFaces, face1, tot, cur+1 );
+			subdivideFace( newVertices, newFaces, face2, tot, cur+1 );
+			subdivideFace( newVertices, newFaces, face3, tot, cur+1 );
+			subdivideFace( newVertices, newFaces, face4, tot, cur+1 );
+		}
+	}
+
+	function subdivideGeometryFaces( geometry ){
 
 		var newVertices = [];
 		var newFaces = [];
@@ -902,37 +932,44 @@ var Ring = new function() {
 		for( var i=0; i<geometry.faces.length; i++ ){
 
 			var face = geometry.faces[i];
+			
 			var a = geometry.vertices[ face.a ];
 			var b = geometry.vertices[ face.b ];
 			var c = geometry.vertices[ face.c ];
-			var ab = new THREE.Vector3( (a.x + b.x)/2, (a.y + b.y)/2, (a.z + b.z)/2 );
-			var ac = new THREE.Vector3( (a.x + c.x)/2, (a.y + c.y)/2, (a.z + c.z)/2 );
-			var bc = new THREE.Vector3( (b.x + c.x)/2, (b.y + c.y)/2, (b.z + c.z)/2 );
-			newVertices.push( a, b, c, ab, ac, bc );
-			newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-6, newVertices.length-2 ) );
-			newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ) );
-			newFaces.push( new THREE.Face3( newVertices.length-5, newVertices.length-3, newVertices.length-1 ) );
-			newFaces.push( new THREE.Face3( newVertices.length-1, newVertices.length-2, newVertices.length-4 ) );
+
+			var vec = new THREE.Vector3( 0,0,-1 );
+
+			newVertices.push( a, b, c );
+
+			if( vec.angleTo(face.normal) > Math.PI/3 ){
+
+				newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ) );
+
+			} else {
+
+				subdivideFace( newVertices, newFaces, new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ), 1, 0 );
+
+			}
 
 		}
 
 		var newGeometry = new THREE.Geometry();
 		newGeometry.faces = newFaces;
 		newGeometry.vertices = newVertices;
-		
+		newGeometry.mergeVertices();
 		return newGeometry;
 
 	}
 
+
 	function bend( origin, radius, mesh ){
 
 		var matrix = new THREE.Matrix4().setPosition( new THREE.Vector3( -mesh.width/2, 0, 0 ) );
+
 		mesh.geometry.applyMatrix( matrix );
-
-	
-		mesh.geometry = subdivisionFace( mesh.geometry.clone() ).clone();
-		mesh.geometry = subdivisionFace( mesh.geometry.clone() ).clone();
-
+		mesh.geometry.verticesNeedUpdate = true;
+		mesh.geometry.computeFaceNormals();
+		mesh.geometry = subdivideGeometryFaces( mesh.geometry.clone() ).clone();
 
 		var outerRadius = radius + mesh.depth/2;
 		var outerCircumference = outerRadius*2*Math.PI;
@@ -949,6 +986,7 @@ var Ring = new function() {
 		mesh.geometry.mergeVertices();
 		mesh.geometry.computeFaceNormals();
         mesh.geometry.computeVertexNormals();
+
 
 
 		return mesh;
@@ -1034,7 +1072,7 @@ var Ring = new function() {
 		export : function( type ){
 
 			exportModel( type );
-			
+
 		}
 
 	}
