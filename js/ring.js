@@ -457,68 +457,20 @@ var Ring = new function() {
 		var convert = ['a','b','c'];
 	
 		if( ringText ){
+
 			ringText =  bend( ringBody.origin, ringBody.radius, ringText );
 			ringText.position.copy( ringOptions.positionCalibrated );
 			ringText.position.y -= ringOptions.textHeight/2;
 			ringText.rotation.copy( ringOptions.rotationCalibrated );
 
-			// for(var i=0;i< ringText.geometry.faces.length;i++){
-
-			// // 	ringText.geometry.faces[i].normal.negate()
-			// // // 	// var theta = ringText.geometry.faces[i].normal.angleTo( getCenter(ringText.geometry.vertices, ringText.geometry.faces[i] ).sub(ringBody.origin) );
-			// // // 	ringText.geometry.faces[i].normal = getCenter(ringText.geometry.vertices, ringText.geometry.faces[i] ).sub(ringBody.origin).normalize();
-			// // // 	if( true ){
-			// // // 	// // 	// console.log('1')
-			// 		for(var k=0;k<ringText.geometry.faces[i].vertexNormals.length;k++){
-			// 			// console.log(ringText.geometry.faces[i].vertexNormals[k].equals(ringText.geometry.faces[i].normal))
-			// 			ringText.geometry.faces[i].vertexNormals[k] .copy(ringText.geometry.faces[i].normal);
-			// 			// ringText.geometry.faces[i].vertexNormals[k]= ringText.geometry.vertices[ ringText.geometry.faces[i][convert[k]] ].clone().sub(ringBody.origin).normalize() ;
-			// 		}
-			// // // 	}
-			// // // 	// ringText.geometry.faces[i].vertexNormals.negate();
-			// // // 	// ringText.geometry.faces[i].vertexNormals = new THREE.Vector3( 0,0,1 );
-			// // // 	// ringText.geometry.faces[i].normal = new THREE.Vector3( 0,0,-1 );
-			// }
-			// ringText.geometry.normalsNeedUpdate = true;
-			// // ringText.geometry.computeVertexNormals ( true )
-
-			// console.log(ringText.geometry.faces[3].vertexNormals)
-
-
-
 			ringObject.add( ringText );
 		}
-
-		console.log( ringObject );
-
-		edges = new THREE.EdgesHelper( ringText, 0x00ff00 );
-		// scene.add( edges );
-
-		edges = new THREE.FaceNormalsHelper( ringText, 20, 0xff0000, 1 );
-		// scene.add( edges );
-
-		// edges = new THREE.VertexNormalsHelper( ringText, 20, 0x0000ff, 1 );
-		// // scene.add( edges );
 
 		scene.add(ringObject);
 
 		console.log( 'total ' + (new Date().getTime() - startTime) +'ms' );
 
 	}
-
-	// function getCenter( vertices, face ){
-
-	// 	var a = vertices[ face.a ];
-	// 	var b = vertices[ face.b ];
-	// 	var c = vertices[ face.c ];
-
-	// 	return new THREE.Vector3( 
-	// 			( a.x + b.x + c.x ) / 3,
-	// 			( a.y + b.y + c.y ) / 3,
-	// 			( a.z + b.z + c.z ) / 3
-	// 		)
-	// }
-
 
 	function createRingBody(){
 
@@ -941,14 +893,20 @@ var Ring = new function() {
 
 			newVertices.push( a, b, c );
 
-			if( vec.angleTo(face.normal) > Math.PI/3 ){
+			if( ringOptions.type == 'text' ){
 
-				newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ) );
+				if( vec.angleTo(face.normal) > Math.PI/3 ){
 
-			} else {
+					newFaces.push( new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ) );
 
-				subdivideFace( newVertices, newFaces, new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ), 1, 0 );
+				} else {
 
+					subdivideFace( newVertices, newFaces, new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ), 1, 0 );
+
+				}
+
+			} else if ( ringOptions.type == 'shape' ){
+				subdivideFace( newVertices, newFaces, new THREE.Face3( newVertices.length-3, newVertices.length-2, newVertices.length-1 ), 3, 0 );
 			}
 
 		}
@@ -969,7 +927,9 @@ var Ring = new function() {
 		mesh.geometry.applyMatrix( matrix );
 		mesh.geometry.verticesNeedUpdate = true;
 		mesh.geometry.computeFaceNormals();
+
 		mesh.geometry = subdivideGeometryFaces( mesh.geometry.clone() ).clone();
+		
 
 		var outerRadius = radius + mesh.depth/2;
 		var outerCircumference = outerRadius*2*Math.PI;
