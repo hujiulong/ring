@@ -189,7 +189,7 @@ var Ring = new function() {
 				ringOptions.textHeight = 150;
 				ringOptions.rotationCalibrated.set( 0, 0, 6/180*Math.PI );
 				ringOptions.positionCalibrated.set( 0, 37, 0 );
-				ringOptions.cutFlag = false;
+				ringOptions.cutFlag = true;
 			}
 
 		} else if ( ringModel == '9-4' ){
@@ -468,6 +468,10 @@ var Ring = new function() {
 
 		scene.add(ringObject);
 
+		var box = new THREE.Box3();
+		box.setFromObject(ringObject);
+		console.log(box)
+
 		console.log( 'total ' + (new Date().getTime() - startTime) +'ms' );
 
 	}
@@ -483,7 +487,16 @@ var Ring = new function() {
 		var endPointsIndex1 = [];
 		var endPointsIndex2 = [];
 
-		var matrix = (new THREE.Matrix4().makeRotationX ( - Math.PI/2 )).multiply(new THREE.Matrix4().makeScale ( 50, 50, 50 ));
+		geometry.computeBoundingBox();
+
+
+		var scale = 1000 / (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
+		var rotationX = 0;
+		if( (geometry.boundingBox.max.z - geometry.boundingBox.min.z) < (geometry.boundingBox.max.y - geometry.boundingBox.min.y) ){
+			rotationX = - Math.PI/2;
+		}
+
+		var matrix = (new THREE.Matrix4().makeRotationX ( rotationX )).multiply(new THREE.Matrix4().makeScale ( scale, scale, scale ));
 
 		geometry.applyMatrix(matrix);
 		geometry.verticesNeedUpdate = true;
@@ -501,12 +514,12 @@ var Ring = new function() {
 		var normal1 = new THREE.Vector3().crossVectors( 
 											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), theta).normalize(), 
 											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0), theta).normalize()
-										);
+										).normalize();
 
 		var normal2 = new THREE.Vector3().crossVectors( 
 											new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), -theta).normalize(), 
 											new THREE.Vector3(0,1,1).applyAxisAngle(new THREE.Vector3(0,1,0), -theta).normalize()
-										);
+										).normalize();
 	
 		var plane1 = new THREE.Plane();
 		plane1.setFromNormalAndCoplanarPoint( normal1.normalize(), origin);
@@ -515,6 +528,13 @@ var Ring = new function() {
 		plane2.setFromNormalAndCoplanarPoint( normal2.normalize().negate(), origin);
 
 		function inRange( p1, p2, point ){
+
+			// if ( ringOptions.cutFlag && (p1.distanceToPoint( point ) > 0 && point.y < 0) || ( p2.distanceToPoint( point ) > 0 && point.y > 0 ) )
+			// 	return true;
+			// return false;
+
+
+
 			if ( ringOptions.cutFlag && p1.distanceToPoint( point ) > 0 && p2.distanceToPoint( point ) > 0 )
 				return true;
 			return false;
@@ -586,7 +606,10 @@ var Ring = new function() {
 
 				newVertices.push( inPoints[0], inPoints[1], point1, point2 );
 
-				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
+				// console.log( newVertices.length )
+				// console.log( inPoints[0], inPoints[1], point1, point2 )
+				// console.log( newVertices[ newVertices.length-1 ] )
+				var vec = getInnerPoint( newVertices[ newVertices.length-1 ].clone(), origin, radius-20 ).sub( point1.clone() );
 
 				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
 				newFaces.push( createUniformFace( newVertices, newVertices.length-2, newVertices.length-3, newVertices.length-4, vec ) );
@@ -619,6 +642,7 @@ var Ring = new function() {
 
 				newVertices.push( inPoints[0], point1, point2 );
 
+				
 				var vec = getInnerPoint( newVertices[newVertices.length-1].clone(), origin, radius-20 ).sub( point1.clone() );
 
 				newFaces.push( createUniformFace( newVertices, newVertices.length-1, newVertices.length-2, newVertices.length-3, vec ) );
@@ -961,15 +985,18 @@ var Ring = new function() {
 		window.URL = window.URL || window.webkitURL;
 		window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
 
+		var object = ringObject.clone();
+
 		if ( type == 'obj' ){
 
 			var exporter = new THREE.OBJExporter();
-			data = exporter.parse( scene );
+			data = exporter.parse( object );
+			console.log(data)
 
 		} else if ( type == 'stl' ){
 
 			var exporter = new THREE.STLExporter();
-			data = exporter.parse( scene );
+			data = exporter.parse( object );
 
 		}
 

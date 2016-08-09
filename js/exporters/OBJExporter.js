@@ -71,41 +71,41 @@ THREE.OBJExporter.prototype = {
 
 				// uvs
 
-				if( uvs !== undefined ) {
+				// if( uvs !== undefined ) {
 
-					for ( i = 0, l = uvs.count; i < l; i ++, nbVertexUvs++ ) {
+				// 	for ( i = 0, l = uvs.count; i < l; i ++, nbVertexUvs++ ) {
 
-						uv.x = uvs.getX( i );
-						uv.y = uvs.getY( i );
+				// 		uv.x = uvs.getX( i );
+				// 		uv.y = uvs.getY( i );
 
-						// transform the uv to export format
-						output += 'vt ' + uv.x + ' ' + uv.y + '\n';
+				// 		// transform the uv to export format
+				// 		output += 'vt ' + uv.x + ' ' + uv.y + '\n';
 
-					}
+				// 	}
 
-				}
+				// }
 
 				// normals
 
-				if( normals !== undefined ) {
+				// if( normals !== undefined ) {
 
-					normalMatrixWorld.getNormalMatrix( mesh.matrixWorld );
+				// 	normalMatrixWorld.getNormalMatrix( mesh.matrixWorld );
 
-					for ( i = 0, l = normals.count; i < l; i ++, nbNormals++ ) {
+				// 	for ( i = 0, l = normals.count; i < l; i ++, nbNormals++ ) {
 
-						normal.x = normals.getX( i );
-						normal.y = normals.getY( i );
-						normal.z = normals.getZ( i );
+				// 		normal.x = normals.getX( i );
+				// 		normal.y = normals.getY( i );
+				// 		normal.z = normals.getZ( i );
 
-						// transfrom the normal to world space
-						normal.applyMatrix3( normalMatrixWorld );
+				// 		// transfrom the normal to world space
+				// 		normal.applyMatrix3( normalMatrixWorld );
 
-						// transform the normal to export format
-						output += 'vn ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n';
+				// 		// transform the normal to export format
+				// 		output += 'vn ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n';
 
-					}
+				// 	}
 
-				}
+				// }
 
 				// faces
 
