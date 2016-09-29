@@ -438,7 +438,7 @@ var Ring = new function() {
 
 		renderer = new THREE.WebGLRenderer( { antialias: true } );
 		renderer.setPixelRatio( window.devicePixelRatio );
-		renderer.setClearColor( 0xffffff );
+		renderer.setClearColor( 0xeeeeee );
 		renderer.setSize( containerWidth, containerHeight );
 		container.appendChild( renderer.domElement );
 
@@ -1242,7 +1242,6 @@ var Ring = new function() {
 
 			var exporter = new THREE.OBJExporter();
 			data = exporter.parse( object );
-			console.log(data)
 
 		} else if ( type == 'stl' ){
 

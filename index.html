@@ -56,6 +56,8 @@
 				}
 			}
 
+			var changeClock = null;
+
 			Ring.init( config.text, 						//文字内容				
 					 	config.materialName,				//材质   黄金:gold_yellow  玫瑰金:gold_red   银: silver
 						config.model,						//戒圈类型   9-1  9-2  ...  9-5   在model目录下需要有同名js模型文件
@@ -65,7 +67,15 @@
 			var gui = new dat.GUI();
 
 			gui.add(config,'text').onChange(function(){
-				Ring.change('text',config.text);
+
+				clearTimeout( changeClock );
+
+				changeClock = setTimeout( function(){
+
+					Ring.change('text',config.text);
+
+				}, 300 );
+		
 			});
 
 
