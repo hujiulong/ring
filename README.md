@@ -1,2 +1,5 @@
 # ring
-[demo](https://hujiulong.github.io/ring/index.html)
+
+![screenshot](https://hujiulong.github.io/ring/screenshot.png)
+
+[LIVE DEMO](https://hujiulong.github.io/ring/index.html)
